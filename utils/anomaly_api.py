@@ -15,8 +15,8 @@ class Observation(BaseModel):
     tcp_udp_ratio_packets: float
     dir_ratio_packets: float
 
-model = joblib.load("dashboard/artifacts/anomaly_model.pkl")
-scaler = joblib.load("dashboard/artifacts/anomaly_scaler.pkl")
+model = joblib.load("artifacts/anomaly_model.pkl")
+scaler = joblib.load("artifacts/anomaly_scaler.pkl")
 
 def process_observation(obs_dict):
     import pandas as pd
@@ -85,7 +85,7 @@ def generate_report(anomaly, severity, contributions, recommendation):
     Recommended action: {recommendation}
     """
 
-@app.post("/predict")
+@app.post("/predict_anomaly")
 def predict(obs: Observation):
     obs_dict = obs.model_dump()
     
