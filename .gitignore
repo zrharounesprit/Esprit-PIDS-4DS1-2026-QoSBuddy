@@ -1,4 +1,14 @@
+
+
+# ignore Python cache files — auto-generated, not needed
 __pycache__/
 *.pyc
+*.pyo
+
+# ignore Streamlit cache
 .streamlit/
+
+# ignore environment files
 .env
+*.pkl
+*.parquet
