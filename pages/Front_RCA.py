@@ -10,7 +10,7 @@ import requests
 
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-API_URL = "http://127.0.0.1:8000"
+API_URL = "http://127.0.0.1:8002"
 
 SEVERITY_COLORS = {
     "extreme_scanner": "#e53935",

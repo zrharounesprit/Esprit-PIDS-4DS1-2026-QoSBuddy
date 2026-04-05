@@ -13,7 +13,7 @@ features = [
     "dir_ratio_packets"
 ]
 
-API_URL = "http://127.0.0.1:8000/predict_anomaly"
+API_URL = "http://127.0.0.1:8001/predict_anomaly"
 
 def highlight_anomalies(row):
     if row["Anomaly"]:
