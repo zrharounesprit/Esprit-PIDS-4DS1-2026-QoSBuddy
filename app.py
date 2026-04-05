@@ -15,6 +15,7 @@ import runpy
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="QoSBuddy Dashboard",
+    page_icon="📡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -26,7 +27,6 @@ st.markdown("""
         [data-testid="stSidebarNavItems"] {display: none;}
         [data-testid="collapsedControl"] {display: none;}
         #MainMenu {visibility: hidden;}
-
     </style>
 """, unsafe_allow_html=True)
 
@@ -53,6 +53,15 @@ PAGES = [
             "automatically use this data without needing to upload again."
         ),
         "color": "#1D9E75",
+    },
+    {
+        "label": "Anomaly Detection",
+        "file" : "pages/anomaly_interface",
+        "desc" : (
+            "Detects anomalies in network traffic, identifies key contributing features"
+            ", and provides actionable recommendations to address potential issues."
+        ),
+        "color": "#F04444",
     },
     {
         "label": "Root Cause Analysis",

@@ -11,14 +11,14 @@ from typing import Optional
 # ─────────────────────────────────────────────────────────────────────────────
 # UPDATE THIS PATH to wherever model.py saved your artifacts
 # ─────────────────────────────────────────────────────────────────────────────
-ARTIFACTS_DIR = "C:/Users/muaad/Documents/Lists/esprit/4ds1/QoSBuddy/qosbuddy_RCA/dashboard/artifacts"
+ARTIFACTS_DIR = r"C:/Users/harou/Desktop/QoSBuddy_DSIP_VizBiz_CESNET3_Dataset/dashboard/artifacts"
 
 
 # ── Load all artifacts once at startup ───────────────────────────────────────
 
 print("Loading artifacts...")
 km_model       = joblib.load(os.path.join(ARTIFACTS_DIR, "kmeans_model.pkl"))
-scaler         = joblib.load(os.path.join(ARTIFACTS_DIR, "scaler.pkl"))
+scaler         = joblib.load(os.path.join(ARTIFACTS_DIR, "rca_scaler.pkl"))
 ip_profiles    = pd.read_parquet(os.path.join(ARTIFACTS_DIR, "ip_profiles.parquet"))
 df_slim        = pd.read_parquet(os.path.join(ARTIFACTS_DIR, "df_slim.parquet"))
 df_slim["time"] = pd.to_datetime(df_slim["time"], utc=True)
