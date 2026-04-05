@@ -63,6 +63,15 @@ PAGES = [
         ),
         "color": "#F04444",
     },
+    {
+        "label": "Root Cause Analysis",
+        "file" : "pages/Front_RCA",
+        "desc" : (
+            "Diagnose the root cause of a network issue. Classifies IPs "
+            "into behavioural groups and generates a human-readable report."
+        ),
+        "color": "#534AB7",
+    },
     # ── Teammates add their entries below ─────────────────────────────────────
     # {
     #     "label": "⚠️  Anomaly Detection",
