@@ -1,6 +1,3 @@
-# ignore the model artifacts — too large for git and machine-specific
-artifacts/
-
 # ignore Python cache files — auto-generated, not needed
 __pycache__/
 *.pyc
