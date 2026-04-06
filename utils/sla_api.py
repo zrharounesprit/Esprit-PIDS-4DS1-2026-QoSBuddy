@@ -1,181 +1,205 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# sla_api.py — SLA violation detection API (FastAPI)
+# sla_api.py — SLA XGBoost API (inference only, no scaling)
 #
-# Run (from repo root):
-#   uvicorn utils.sla_api:app --host 127.0.0.1 --port 8003
+# XGBoost was trained on RAW (unscaled) feature_cols in the notebook.
+# The saved scaler was only used for Logistic Regression.
+# So: engineered features → predict_proba directly (NO scaler.transform).
 #
-# Place trained artifacts next to the anomaly models:
-#   artifacts/sla_model.pkl          (required)
-#   artifacts/sla_scaler.pkl         (optional; skipped if missing)
+# Artifacts:
+#   artifacts/sla_xgboost_model.json
+#   artifacts/sla_xgboost_model_config.pkl → feature_cols, optimal_threshold
 #
-# Supports the same row features as the dashboard CSV / anomaly flow.
+# Run:  .\.venv\Scripts\uvicorn.exe utils.sla_api:app --host 127.0.0.1 --port 8003
 # ─────────────────────────────────────────────────────────────────────────────
 
 from __future__ import annotations
 
 import os
+import pickle
 import warnings
-from typing import Any
+from contextlib import asynccontextmanager
+from typing import Any, Dict, List
 
-import joblib
-import shap
-from fastapi import FastAPI
-from pydantic import BaseModel
-from sklearn.ensemble import IsolationForest
+import numpy as np
+import pandas as pd
+import xgboost as xgb
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 
 warnings.filterwarnings("ignore")
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_ARTIFACTS = os.path.join(_REPO_ROOT, "artifacts")
 
-app = FastAPI(title="QoSBuddy SLA API", version="1.0.0")
-
-
-class Observation(BaseModel):
-    n_bytes: float
-    n_packets: float
-    n_flows: float
-    tcp_udp_ratio_packets: float
-    dir_ratio_packets: float
+STATE: dict[str, Any] = {
+    "ready": False,
+    "error": None,
+    "model": None,
+    "feature_cols": None,
+    "optimal_threshold": None,
+}
 
 
-def _load_optional_scaler():
-    path = os.path.join(_ARTIFACTS, "sla_scaler.pkl")
-    if os.path.isfile(path):
-        return joblib.load(path)
-    return None
+def _resolve(rel: str) -> str:
+    return os.path.normpath(os.path.join(_REPO_ROOT, rel))
 
 
-model = joblib.load(os.path.join(_ARTIFACTS, "sla_model.pkl"))
-scaler = _load_optional_scaler()
-
-_explainer = None
-
-
-def _get_explainer():
-    global _explainer
-    if _explainer is not None:
-        return _explainer
-    try:
-        _explainer = shap.TreeExplainer(model)
-    except Exception:
-        _explainer = False  # type: ignore[assignment]
-    return _explainer
-
-
-def process_observation(obs_dict: dict) -> tuple[float, Any, Any, Any]:
-    import pandas as pd
-
-    df = pd.DataFrame([obs_dict])
-    X = scaler.transform(df) if scaler is not None else df.values
-    X_scaled = X  # name kept for parity with anomaly_api
-
-    if isinstance(model, IsolationForest):
-        score = float(model.decision_function(X_scaled)[0])
-        label = model.predict(X_scaled)[0]
-    elif hasattr(model, "predict_proba"):
-        proba = model.predict_proba(X_scaled)[0]
-        label = model.predict(X_scaled)[0]
-        score = float(max(proba))
-    else:
-        label = model.predict(X_scaled)[0]
-        score = float(label)
-
-    return score, label, df, X_scaled
-
-
-def _is_violation(label: Any) -> bool:
-    if isinstance(model, IsolationForest):
-        return label == -1
-    return bool(label == 1 or label is True)
-
-
-def get_explanation(df, X_scaled) -> dict:
-    explainer = _get_explainer()
-    if explainer in (None, False):
-        return {}
-
-    shap_values = explainer.shap_values(X_scaled)
-    row = shap_values[0] if isinstance(shap_values, list) else shap_values[0]
-    return dict(zip(df.columns, row))
-
-
-def compute_severity(score: float, obs: dict) -> str:
-    severity = abs(score) * 10 + obs["n_bytes"] / 1e7
-    if severity > 15:
+def _severity_from_proba(p: float, threshold: float) -> str:
+    if p >= min(0.95, threshold + 0.35):
         return "HIGH"
-    if severity > 8:
+    if p >= threshold + 0.12:
         return "MEDIUM"
     return "LOW"
 
 
-def generate_recommendation(contributions: dict) -> str:
-    if not contributions:
-        return "Review traffic against your SLA thresholds and capacity plans."
-
-    top_feature = max(contributions, key=lambda k: abs(contributions[k]))
-    findings: list[str] = []
-
-    if top_feature in ["n_bytes", "n_packets"]:
-        findings.append(
-            "Heavy volume may breach throughput or utilization SLAs — "
-            "consider shaping, QoS, or scaling."
+def _recommendation(p: float, threshold: float) -> str:
+    if p >= threshold:
+        return (
+            f"Breach probability {p:.3f} >= threshold {threshold:.3f}. "
+            "Review capacity, QoS policies, and heavy hitters."
         )
-    if top_feature == "dir_ratio_packets":
-        findings.append("Asymmetric traffic can stress uplinks or NAT paths tied to SLA paths.")
-    if top_feature == "tcp_udp_ratio_packets":
-        findings.append("Unusual TCP/UDP mix can correlate with real-time or DNS-like patterns affecting latency SLAs.")
-    if top_feature == "n_flows":
-        findings.append("High flow count can indicate fan-out that strains state tables and delay-sensitive traffic.")
-
-    if not findings:
-        findings.append("Monitor baseline versus contracted SLA metrics (latency, loss, jitter).")
-    return "\n".join(findings)
+    return f"Probability {p:.3f} < threshold {threshold:.3f}. Within normal range."
 
 
-def generate_report(violation: bool, severity: str, contributions: dict, recommendation: str) -> str:
+def _report(violation: bool, p: float, threshold: float, severity: str) -> str:
     if not violation:
-        return "No SLA risk signal detected for this observation under the current model."
+        return f"No SLA breach signal. Probability: {p:.3f}, threshold: {threshold:.3f}."
+    return (
+        f"SLA BREACH DETECTED\n"
+        f"Probability: {p:.3f}\nThreshold: {threshold:.3f}\nSeverity: {severity}\n\n"
+        f"Action: Review capacity, QoS, and heavy hitters (bytes/flows/asymmetry)."
+    )
 
-    if contributions:
-        top_features = sorted(contributions.items(), key=lambda x: abs(x[1]), reverse=True)[:2]
-        explanation = ", ".join([f"{f}" for f, _ in top_features])
-    else:
-        explanation = "model drivers not available (non-tree model or SHAP unavailable)"
 
-    return f"""
-An SLA-related risk signal was raised for this traffic profile.
+def _init_sla() -> None:
+    STATE["ready"] = False
+    STATE["error"] = None
+    STATE["model"] = None
+    STATE["feature_cols"] = None
+    STATE["optimal_threshold"] = None
 
-Severity: {severity}
+    model_path = _resolve(os.environ.get("SLA_MODEL_JSON", "artifacts/sla_xgboost_model.json"))
+    cfg_path = _resolve(os.environ.get("SLA_CONFIG_PKL", "artifacts/sla_xgboost_model_config.pkl"))
 
-Main contributing factors: {explanation}
+    try:
+        if not os.path.isfile(model_path):
+            STATE["error"] = f"XGBoost JSON not found: {model_path}"
+            return
+        if not os.path.isfile(cfg_path):
+            STATE["error"] = f"Config pickle not found: {cfg_path}"
+            return
 
-Recommended action: {recommendation}
-"""
+        with open(cfg_path, "rb") as f:
+            cfg = pickle.load(f)
+
+        feature_cols = cfg.get("feature_cols")
+        if not feature_cols:
+            STATE["error"] = "Pickle missing `feature_cols`."
+            return
+
+        threshold = cfg.get("optimal_threshold")
+        if threshold is None:
+            STATE["error"] = "Pickle missing `optimal_threshold`."
+            return
+
+        clf = xgb.XGBClassifier()
+        clf.load_model(model_path)
+
+        STATE["model"] = clf
+        STATE["feature_cols"] = list(feature_cols)
+        STATE["optimal_threshold"] = float(threshold)
+        STATE["ready"] = True
+        print(f"SLA model loaded: {len(feature_cols)} features, threshold={threshold:.4f}")
+    except Exception as e:
+        STATE["error"] = f"Failed to load: {e}"
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    _init_sla()
+    yield
+
+
+app = FastAPI(title="QoSBuddy SLA API", version="3.0.0", lifespan=_lifespan)
+
+
+def _require_ready():
+    if not STATE["ready"]:
+        raise HTTPException(503, detail=STATE.get("error") or "Not ready.")
+
+
+class PredictBody(BaseModel):
+    rows: List[Dict[str, object]] = Field(..., min_length=1)
+    input_row_count: int = Field(..., ge=1)
+
+
+@app.get("/sla_metadata")
+def sla_metadata():
+    return {
+        "ready": STATE["ready"],
+        "error": STATE.get("error"),
+        "feature_columns": STATE.get("feature_cols") or [],
+        "optimal_threshold": STATE.get("optimal_threshold"),
+    }
+
+
+@app.get("/health")
+def health():
+    return {"ready": STATE["ready"], "error": STATE.get("error")}
 
 
 @app.post("/predict_sla")
-def predict_sla(obs: Observation):
-    obs_dict = obs.model_dump()
-    score, label, df, X_scaled = process_observation(obs_dict)
-    violation = _is_violation(label)
+def predict_sla(body: PredictBody):
+    _require_ready()
+    model = STATE["model"]
+    feature_cols = STATE["feature_cols"]
+    threshold = STATE["optimal_threshold"]
+    n_in = body.input_row_count
 
-    if not violation:
-        return {
-            "sla_violation": False,
-            "message": "Within expected profile for SLA monitoring",
+    df = pd.DataFrame(body.rows)
+    missing = [c for c in feature_cols if c not in df.columns]
+    if missing:
+        raise HTTPException(400, detail=f"Missing columns: {missing}")
+    if "__row_id" not in df.columns:
+        raise HTTPException(400, detail="Rows must include `__row_id`.")
+
+    df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=feature_cols)
+    if df.empty:
+        raise HTTPException(400, detail="All rows NaN after cleanup.")
+
+    X = df[feature_cols].to_numpy(dtype=np.float64)
+    proba = model.predict_proba(X)[:, 1]
+
+    scored = {}
+    for i, rid in enumerate(df["__row_id"].tolist()):
+        p = float(proba[i])
+        violation = p >= threshold
+        severity = _severity_from_proba(p, threshold)
+        scored[int(rid)] = {
+            "row_id": int(rid),
+            "probability": p,
+            "sla_violation": violation,
+            "severity": severity,
+            "recommendation": _recommendation(p, threshold),
+            "report": _report(violation, p, threshold, severity),
         }
 
-    contributions = get_explanation(df, X_scaled)
-    severity = compute_severity(score, obs_dict)
-    recommendation = generate_recommendation(contributions)
-    report = generate_report(violation, severity, contributions, recommendation)
+    results = []
+    skipped = 0
+    for rid in range(n_in):
+        if rid in scored:
+            results.append(scored[rid])
+        else:
+            skipped += 1
+            results.append({
+                "row_id": rid, "probability": None, "sla_violation": None,
+                "severity": None, "recommendation": None, "report": None,
+                "skipped": True, "reason": "Dropped during feature engineering (warmup/NaN).",
+            })
 
     return {
-        "sla_violation": True,
-        "severity": severity,
-        "score": score,
-        "contributions": contributions,
-        "recommendation": recommendation,
-        "report": report,
+        "optimal_threshold": threshold,
+        "rows_input": n_in,
+        "rows_scored": len(df),
+        "rows_skipped": skipped,
+        "results": results,
     }
