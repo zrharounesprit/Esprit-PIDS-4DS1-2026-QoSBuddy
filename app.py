@@ -72,6 +72,15 @@ PAGES = [
         ),
         "color": "#534AB7",
     },
+    {
+        "label": "SLA Detection",
+        "file" : "pages/sla_interface",
+        "desc" : (
+            "Flags traffic observations that may breach or stress your SLA targets "
+            "(companion model to anomaly detection — run the SLA API on port 8003)."
+        ),
+        "color": "#0E7490",
+    },
     # ── Teammates add their entries below ─────────────────────────────────────
     # {
     #     "label": "⚠️  Anomaly Detection",

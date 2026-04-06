@@ -47,11 +47,28 @@ This project was developed as part of the PIDS – 4th Year Engineering Program 
 ## Getting Started  
 
 ### Prerequisites  
-- Python 3.x  
-- Node.js (if frontend is included)  
+- Python 3.10+  
 
 ### Installation  
 ```bash
-git clone https://github.com/your-username/your-repo.git
-cd your-repo
+git clone https://github.com/zrharounesprit/Esprit-PIDS-4DS1-2026-QoSBuddy.git
+cd Esprit-PIDS-4DS1-2026-QoSBuddy
 pip install -r requirements.txt
+```
+
+### Running  
+Start each API in a separate terminal, then launch the dashboard:
+
+```bash
+# Terminal 1 — Anomaly Detection API
+uvicorn utils.anomaly_api:app --host 127.0.0.1 --port 8001
+
+# Terminal 2 — Root Cause Analysis API
+uvicorn utils.main_RCA:app --host 127.0.0.1 --port 8002
+
+# Terminal 3 — SLA Detection API
+uvicorn utils.sla_api:app --host 127.0.0.1 --port 8003
+
+# Terminal 4 — Streamlit Dashboard
+streamlit run app.py
+```
