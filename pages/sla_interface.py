@@ -64,13 +64,13 @@ else:
 
     def highlight_violations(row):
         if row.get("Anomaly") is True:
-            sev = row.get("Severity")
-            if sev == "LOW":
-                return ["background-color: #FFA500"] * len(row)
-            if sev == "MEDIUM":
-                return ["background-color: #FF4500"] * len(row)
-            if sev == "HIGH":
-                return ["background-color: #FF0000"] * len(row)
+            match row.get("Severity"):
+                case "LOW":
+                    return ["background-color: #FFA500"] * len(row)
+                case "MEDIUM":
+                    return ["background-color: #FF4500"] * len(row)
+                case "HIGH":
+                    return ["background-color: #FF0000"] * len(row)
         return [""] * len(row)
 
     def show_stats(sla_df: pd.DataFrame):
