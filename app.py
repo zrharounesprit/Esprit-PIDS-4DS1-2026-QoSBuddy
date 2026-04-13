@@ -46,6 +46,16 @@ PAGES = [
         "color": None,
     },
     {
+        "label": "Network Simulation",
+        "file" : "pages/simulation",
+        "desc" : (
+            "Simulate how different user profiles impact network performance. "
+            "Upload your dataset to create custom agents, or describe a new user "
+            "for our LLM-powered persona generator to create a new agent on the fly."
+        ),
+        "color": "#00FFD5",
+    },
+    {
         "label": "Upload Dataset",
         "file" : "pages/upload",
         "desc" : (
