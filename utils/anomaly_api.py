@@ -3,10 +3,14 @@ import joblib
 import warnings 
 import shap
 warnings.filterwarnings("ignore")
+from pathlib import Path
 
 from fastapi import FastAPI
 
 app = FastAPI()
+model = None
+scaler = None
+explainer = None
 
 class Observation(BaseModel):
     n_bytes: float
@@ -15,8 +19,13 @@ class Observation(BaseModel):
     tcp_udp_ratio_packets: float
     dir_ratio_packets: float
 
-model = joblib.load("artifacts/anomaly_model.pkl")
-scaler = joblib.load("artifacts/anomaly_scaler.pkl")
+@app.on_event("startup")
+def _load_artifacts():
+    global model, scaler, explainer
+    artifacts_dir = Path(__file__).resolve().parents[1] / "artifacts"
+    model = joblib.load(artifacts_dir / "anomaly_model.pkl")
+    scaler = joblib.load(artifacts_dir / "anomaly_scaler.pkl")
+    explainer = shap.TreeExplainer(model)
 
 def process_observation(obs_dict):
     import pandas as pd
@@ -32,7 +41,6 @@ def process_observation(obs_dict):
     
     return score, label, df
 
-explainer = shap.TreeExplainer(model)
 def get_explanation(df):
     X_scaled = scaler.transform(df)
     shap_values = explainer.shap_values(X_scaled)

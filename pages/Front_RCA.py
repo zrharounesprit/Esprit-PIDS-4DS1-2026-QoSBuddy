@@ -145,7 +145,6 @@ selected_row = df.iloc[row_index].to_dict()
 # show what is being sent so the user can verify
 with st.expander("View selected row values"):
     st.json(selected_row)
-
 st.divider()
 
 # ── Analyse button ────────────────────────────────────────────────────────────

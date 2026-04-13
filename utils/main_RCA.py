@@ -11,7 +11,7 @@ from typing import Optional
 # ─────────────────────────────────────────────────────────────────────────────
 # UPDATE THIS PATH to wherever model.py saved your artifacts
 # ─────────────────────────────────────────────────────────────────────────────
-ARTIFACTS_DIR = r"C:/Users/harou/Desktop/QoSBuddy_DSIP_VizBiz_CESNET3_Dataset/dashboard/artifacts"
+ARTIFACTS_DIR = r"C:\Users\muaad\Documents\Lists\esprit\4ds1\QoSBuddy\qosbuddy_RCA\dashboard\artifacts"
 
 
 # ── Load all artifacts once at startup ───────────────────────────────────────
@@ -387,30 +387,30 @@ def classify_root_cause(row: IPRow):
     return build_report(row.id_ip, cause_label, feature_dict)
 
 
-# ── Endpoint 2: GET /rca/ip/{id_ip} ──────────────────────────────────────────
-# Looks up a known IP from the pre-computed profiles.
-# Power BI will call this when the user clicks "View Root Cause" on the dashboard.
-# No feature input needed — the profile is already saved from training.
+# # ── Endpoint 2: GET /rca/ip/{id_ip} ──────────────────────────────────────────
+# # Looks up a known IP from the pre-computed profiles.
+# # Power BI will call this when the user clicks "View Root Cause" on the dashboard.
+# # No feature input needed — the profile is already saved from training.
 
-@app.get("/rca/ip/{id_ip}", summary="Get RCA report for a known IP by ID")
-def get_rca_by_ip(id_ip: int):
-    """
-    Returns the full RCA report for an IP that was part of the training dataset.
-    The cluster label and profile are loaded directly from the saved profiles file.
-    No feature input required.
-    """
-    if id_ip not in ip_profiles.index:
-        raise HTTPException(
-            status_code=404,
-            detail=f"IP {id_ip} was not found in the pre-computed profiles. "
-                   f"Use POST /rca with raw features to classify a new IP."
-        )
+# @app.get("/rca/ip/{id_ip}", summary="Get RCA report for a known IP by ID")
+# def get_rca_by_ip(id_ip: int):
+#     """
+#     Returns the full RCA report for an IP that was part of the training dataset.
+#     The cluster label and profile are loaded directly from the saved profiles file.
+#     No feature input required.
+#     """
+#     if id_ip not in ip_profiles.index:
+#         raise HTTPException(
+#             status_code=404,
+#             detail=f"IP {id_ip} was not found in the pre-computed profiles. "
+#                    f"Use POST /rca with raw features to classify a new IP."
+#         )
 
-    row         = ip_profiles.loc[id_ip]
-    cause_label = row["cause_label"]
-    feature_dict = {col: row[col] for col in PROFILE_FEATURES if col in row.index}
+#     row         = ip_profiles.loc[id_ip]
+#     cause_label = row["cause_label"]
+#     feature_dict = {col: row[col] for col in PROFILE_FEATURES if col in row.index}
 
-    return build_report(id_ip, cause_label, feature_dict)
+#     return build_report(id_ip, cause_label, feature_dict)
 
 
 # ── Endpoint 3: GET /health ───────────────────────────────────────────────────
