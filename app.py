@@ -82,13 +82,15 @@ PAGES = [
         ),
         "color": "#534AB7",
     },
-    # ── Teammates add their entries below ─────────────────────────────────────
-    # {
-    #     "label": "⚠️  Anomaly Detection",
-    #     "file" : "pages/anomaly_model",
-    #     "desc" : "Detects anomalies in network traffic.",
-    #     "color": "#e53935",
-    # },
+    {
+        "label": "Traffic Forecasting",
+        "file" : "pages/forecasting",
+        "desc" : (
+            "Predict future network traffic volumes using an LSTM time-series "
+            "model. Uses a 24-hour lookback window to forecast the next 6 hours."
+        ),
+        "color": "#2196F3",
+    },
 ]
 
 
