@@ -3,7 +3,9 @@ import pandas as pd
 import requests
 
 st.title("Anomaly Detection")
+st.caption("Find the anomalies present in your dataset.")
 
+st.divider()
 
 features = [
     "n_bytes",
@@ -98,11 +100,18 @@ if "df" in st.session_state and st.button("Run Analysis"):
             else:
                 results.append({
                     "Timestamp": row.get("timestamp", None),
-                    "Anomaly":result.get("anomaly")
-                    })
+                    "Anomaly":result.get("anomaly"),
+                    "Severity": None,
+                    "Recommendation": None,
+                    "Score": None,
+                    "Report": None
+                })
             st.session_state["anomaly_results_df"] = pd.DataFrame(results)
 if "df" not in st.session_state:
-    st.info("Upload a dataset and click 'Run Analysis' to see results here.")
+    st.warning(
+        "No dataset loaded. "
+        "Please go to the **Upload** page first and upload a CSV file."
+    )
 
 if "anomaly_results_df" in st.session_state:
     anomaly_results_df = st.session_state["anomaly_results_df"]
