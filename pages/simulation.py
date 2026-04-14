@@ -1,3 +1,5 @@
+from turtle import width
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -116,7 +118,7 @@ if st.session_state.base_result is not None:
                 "after": new["traffic"]
             })
             
-            st.line_chart(df_compare.set_index(base["time"]))
+            st.altair_chart(df_compare.set_index(base["time"]), width=True)
             impact = {
                 "max_load_increase": new["load"].max() - base["load"].max(),
                 "latency_increase": new["latency"].mean() - base["latency"].mean(),

@@ -28,16 +28,33 @@ def build_prompt(description):
 
 def query_llm(prompt):
     client = genai.Client(api_key=API_KEY)
-    print("API Key:", API_KEY)
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",  
-            contents=prompt,
-        )
-        print("LLM Response:", response.text)
-        return response.text
-    except Exception as e:
-        raise RuntimeError(f"Error querying LLM: {str(e)}")
+
+    models = [
+        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+    ]
+
+    errors = []
+
+    for model in models:
+        try:
+            print(f"Trying model: {model}")
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt,
+            )
+
+            if response and response.text:
+                print(f"Success with {model}")
+                return response.text
+
+        except Exception as e:
+            err_msg = f"{model} failed: {str(e)}"
+            print(err_msg)
+            errors.append(err_msg)
+
+    raise RuntimeError("All models failed:\n" + "\n".join(errors))
 
 def extract_json(text):
     """Strip markdown fences and extract the first JSON object found."""

@@ -82,6 +82,12 @@ PAGES = [
         ),
         "color": "#534AB7",
     },
+     {
+    "label": "MCP Demo",
+    "file" : "pages/mcp_demo",
+    "desc" : "Live MCP endpoint demonstration — simulation + RCA pipeline.",
+    "color": "#0097a7",
+    },
     # ── Teammates add their entries below ─────────────────────────────────────
     # {
     #     "label": "⚠️  Anomaly Detection",
