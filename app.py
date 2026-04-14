@@ -56,6 +56,12 @@ PAGES = [
         "color": "#00FFD5",
     },
     {
+    "label": "MCP Demo",
+    "file" : "pages/mcp_demo",
+    "desc" : "Live MCP endpoint demonstration of the network simulation.",
+    "color": "#0097a7",
+    },
+    {
         "label": "Upload Dataset",
         "file" : "pages/upload",
         "desc" : (
@@ -81,12 +87,6 @@ PAGES = [
             "into behavioural groups and generates a human-readable report."
         ),
         "color": "#534AB7",
-    },
-     {
-    "label": "MCP Demo",
-    "file" : "pages/mcp_demo",
-    "desc" : "Live MCP endpoint demonstration — simulation + RCA pipeline.",
-    "color": "#0097a7",
     },
     # ── Teammates add their entries below ─────────────────────────────────────
     # {
