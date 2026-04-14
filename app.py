@@ -97,6 +97,12 @@ PAGES = [
         ),
         "color": "#0E7490",
     },
+    {
+        "label": "User Persona Classification",
+        "file" : "pages/persona_model", # Path to your new file
+        "desc" : "Classify network users into Gamers, Streamers, or Normal users.",
+        "color": "#E100FF", # Orange accent
+    },
     # ── Teammates add their entries below ─────────────────────────────────────
     # {
     #     "label": "⚠️  Anomaly Detection",
