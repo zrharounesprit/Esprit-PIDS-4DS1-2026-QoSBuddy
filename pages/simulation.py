@@ -1,5 +1,3 @@
-from turtle import width
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -98,35 +96,55 @@ if st.session_state.base_result is not None:
     st.plotly_chart(fig, use_container_width=True)
     show_stats(result)
 
-    persona_input = st.text_input("Describe new user (e.g., streamer, gamer)")
-    st.session_state.persona_input = persona_input
+    st.divider()
+    st.subheader("What-If: Add a New User")
 
+    persona_input = st.text_input("Describe new user (e.g., streamer, gamer)")
+
+    # Only regenerate the persona profile when the input text actually changes
     if persona_input:
-        if ('persona_profile' not in st.session_state) or (st.session_state.persona_input != persona_input):
+        if st.session_state.get("persona_input_last") != persona_input:
+            st.session_state.persona_input_last = persona_input
             st.session_state.persona_profile = llm_to_profile(query_llm(build_prompt(persona_input)))
-        st.info(f"Detected Profile: {st.session_state.persona_profile['type'].capitalize()}")
+            st.session_state.whatif_result = None  # clear stale result
+
+        if "persona_profile" in st.session_state:
+            st.info(f"Detected Profile: {st.session_state.persona_profile['type'].capitalize()}")
+
+    # Always render the button at the top level so Streamlit doesn't lose it on re-render
+    run_whatif = st.button(
+        "Run What-If Scenario",
+        disabled=(not persona_input or "persona_profile" not in st.session_state),
+    )
+
+    if run_whatif:
         persona_agent = SmartAgent(st.session_state.persona_profile, name="Persona")
-        
-        if st.button("Run What-If Scenario"):
-            base = st.session_state.base_result
-            new_agents = agents + [persona_agent]
-            new = run_multiple_simulations(new_agents, network, simulation_number)[0]
-            
-            st.subheader("Before vs After")
-            df_compare = pd.DataFrame({
-                "before": base["traffic"],
-                "after": new["traffic"]
-            })
-            
-            st.altair_chart(df_compare.set_index(base["time"]), width=True)
-            impact = {
-                "max_load_increase": new["load"].max() - base["load"].max(),
-                "latency_increase": new["latency"].mean() - base["latency"].mean(),
-                "congestion_time": (new["load"] > 1).sum()
-            }
-            show_stats(new)
-            show_impact_stats(impact)
-            if new["load"].max() > 0.85:
-                st.error(f"Warning: Adding this user violates QoS thresholds")
-            else:
-                st.success("This user can be added without violating QoS thresholds")
+        base = st.session_state.base_result
+        new_agents = agents + [persona_agent]
+        new_result = run_multiple_simulations(new_agents, network, simulation_number)[0]
+        st.session_state.whatif_result = new_result
+
+    if "whatif_result" in st.session_state and st.session_state.whatif_result is not None:
+        base = st.session_state.base_result
+        new = st.session_state.whatif_result
+
+        st.subheader("Before vs After")
+        df_compare = pd.DataFrame({
+            "time": base["time"],
+            "Before": base["traffic"].values,
+            "After": new["traffic"].values,
+        })
+        st.line_chart(df_compare.set_index("time"))
+
+        impact = {
+            "max_load_increase": new["load"].max() - base["load"].max(),
+            "latency_increase": new["latency"].mean() - base["latency"].mean(),
+            "congestion_time": int((new["load"] > 1).sum()),
+        }
+        show_stats(new)
+        show_impact_stats(impact)
+
+        if new["load"].max() > 0.85:
+            st.error("Warning: Adding this user violates QoS thresholds")
+        else:
+            st.success("This user can be added without violating QoS thresholds")

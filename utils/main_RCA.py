@@ -3,32 +3,39 @@ import json
 import joblib
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 
 # ─────────────────────────────────────────────────────────────────────────────
-# UPDATE THIS PATH to wherever model.py saved your artifacts
+# Resolve artifacts directory relative to this file so it works on any machine
 # ─────────────────────────────────────────────────────────────────────────────
-ARTIFACTS_DIR = r"C:/Users/harou/Desktop/QoSBuddy_DSIP_VizBiz_CESNET3_Dataset/dashboard/artifacts"
+ARTIFACTS_DIR = Path(__file__).resolve().parent.parent / "artifacts"
 
 
 # ── Load all artifacts once at startup ───────────────────────────────────────
 
 print("Loading artifacts...")
-km_model       = joblib.load(os.path.join(ARTIFACTS_DIR, "kmeans_model.pkl"))
-scaler         = joblib.load(os.path.join(ARTIFACTS_DIR, "rca_scaler.pkl"))
-ip_profiles    = pd.read_parquet(os.path.join(ARTIFACTS_DIR, "ip_profiles.parquet"))
-df_slim        = pd.read_parquet(os.path.join(ARTIFACTS_DIR, "df_slim.parquet"))
-df_slim["time"] = pd.to_datetime(df_slim["time"], utc=True)
+try:
+    km_model       = joblib.load(ARTIFACTS_DIR / "kmeans_model.pkl")
+    scaler         = joblib.load(ARTIFACTS_DIR / "rca_scaler.pkl")
+    ip_profiles    = pd.read_parquet(ARTIFACTS_DIR / "ip_profiles.parquet")
+    df_slim        = pd.read_parquet(ARTIFACTS_DIR / "df_slim.parquet")
+    df_slim["time"] = pd.to_datetime(df_slim["time"], utc=True)
 
-with open(os.path.join(ARTIFACTS_DIR, "profile_features.json")) as f:
-    PROFILE_FEATURES = json.load(f)
+    with open(ARTIFACTS_DIR / "profile_features.json") as f:
+        PROFILE_FEATURES = json.load(f)
 
-# Set id_ip as index for fast lookup
-ip_profiles = ip_profiles.set_index("id_ip")
-print("All artifacts loaded. API is ready.")
+    # Set id_ip as index for fast lookup
+    ip_profiles = ip_profiles.set_index("id_ip")
+    print("All artifacts loaded. API is ready.")
+except FileNotFoundError as e:
+    print(f"WARNING: Could not load RCA artifact: {e}")
+    print("The /rca endpoint will return 503 until all artifacts are present.")
+    km_model = scaler = ip_profiles = df_slim = None
+    PROFILE_FEATURES = []
 
 
 # ── Cause definitions ─────────────────────────────────────────────────────────
@@ -344,6 +351,8 @@ app = FastAPI(
 
 @app.post("/rca", summary="Classify root cause from a single data row")
 def classify_root_cause(row: IPRow):
+    if km_model is None:
+        raise HTTPException(status_code=503, detail="RCA model artifacts not loaded. Check server logs.")
     """
     Send one row of raw network traffic features for a single IP.
     The API will:
@@ -355,7 +364,7 @@ def classify_root_cause(row: IPRow):
     # Step 1: engineer features from the raw input row
     feature_dict = engineer_single_row(row)
 
-    f# Step 2: build the full 26-column vector the scaler expects
+    # Step 2: build the full 26-column vector the scaler expects
     # The scaler was trained on mean + std columns combined.
     # For a single incoming row we have no std, so we fill those with 0.
     all_columns = list(ip_profiles.columns)
@@ -394,6 +403,8 @@ def classify_root_cause(row: IPRow):
 
 @app.get("/rca/ip/{id_ip}", summary="Get RCA report for a known IP by ID")
 def get_rca_by_ip(id_ip: int):
+    if ip_profiles is None:
+        raise HTTPException(status_code=503, detail="RCA model artifacts not loaded. Check server logs.")
     """
     Returns the full RCA report for an IP that was part of the training dataset.
     The cluster label and profile are loaded directly from the saved profiles file.

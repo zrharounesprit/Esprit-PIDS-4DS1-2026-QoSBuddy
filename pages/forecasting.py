@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-API_URL  = "http://127.0.0.1:8003"
+API_URL  = "http://127.0.0.1:8004"
 SEQ_LEN  = 24
 HORIZON  = 6
 

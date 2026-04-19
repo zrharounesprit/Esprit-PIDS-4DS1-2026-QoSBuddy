@@ -56,19 +56,31 @@ cd Esprit-PIDS-4DS1-2026-QoSBuddy
 pip install -r requirements.txt
 ```
 
+### Environment setup
+```bash
+cp .env.example .env
+# Edit .env and add your GOOGLE_API_KEY
+```
+
 ### Running  
 Start each API in a separate terminal, then launch the dashboard:
 
 ```bash
-# Terminal 1 — Anomaly Detection API
+# Terminal 1 — Simulation + Persona Classification API (port 8000)
+uvicorn main:app --host 127.0.0.1 --port 8000
+
+# Terminal 2 — Anomaly Detection API (port 8001)
 uvicorn utils.anomaly_api:app --host 127.0.0.1 --port 8001
 
-# Terminal 2 — Root Cause Analysis API
+# Terminal 3 — Root Cause Analysis API (port 8002)
 uvicorn utils.main_RCA:app --host 127.0.0.1 --port 8002
 
-# Terminal 3 — SLA Detection API
+# Terminal 4 — SLA Detection API (port 8003)
 uvicorn utils.sla_api:app --host 127.0.0.1 --port 8003
 
-# Terminal 4 — Streamlit Dashboard
+# Terminal 5 — Traffic Forecasting API (port 8004)
+uvicorn utils.forecasting_api:app --host 127.0.0.1 --port 8004
+
+# Terminal 6 — Streamlit Dashboard
 streamlit run app.py
 ```

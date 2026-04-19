@@ -133,7 +133,8 @@ st.sidebar.caption("Intelligent Network Assurance")
 
 # show a small indicator if a dataset is already loaded
 if "df" in st.session_state:
-    st.sidebar.success(f"{st.session_state['file_name']} loaded")
+    file_name = st.session_state.get("file_name", "dataset")
+    st.sidebar.success(f"{file_name} loaded")
 else:
     st.sidebar.warning("No dataset loaded")
 

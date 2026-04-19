@@ -2,7 +2,7 @@
 # utils/forecasting_api.py — Traffic Forecasting FastAPI
 #
 # Run:
-#   uvicorn utils.forecasting_api:app --port 8003 --reload
+#   uvicorn utils.forecasting_api:app --port 8004 --reload
 # ─────────────────────────────────────────────────────────────────────────────
 
 import os
