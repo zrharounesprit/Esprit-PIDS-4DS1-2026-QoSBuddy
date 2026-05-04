@@ -1,0 +1,9 @@
+scenario,n_flows,n_packets,n_bytes,sum_n_dest_ip,average_n_dest_ip,sum_n_dest_ports,average_n_dest_ports,sum_n_dest_asn,average_n_dest_asn,tcp_udp_ratio_packets,tcp_udp_ratio_bytes,dir_ratio_packets,dir_ratio_bytes,avg_duration,avg_ttl,hour,dayofweek,is_weekend
+Normal traffic,60,275,36237,49,8.67,24,4.33,28,5.0,0.68,0.66,0.47,0.44,5.66,131.88,10,1,0
+Unusual outbound direction,60,275,36237,49,8.67,24,4.33,28,5.0,0.68,0.66,0.7,0.65,0.8,35.0,22,4,0
+Port scanning detected,420,850,52000,380,1.2,320,0.8,95,0.3,0.92,0.91,0.88,0.87,0.4,48.0,1,6,1
+SLA breach risk,2200,4400,264000,800,0.4,600,0.3,280,0.13,0.93,0.92,0.88,0.87,0.5,52.0,19,4,0
+DDoS attack,45000,9200000,520000000,4,0.09,2,0.04,1,0.02,0.02,0.01,0.97,0.98,0.2,42.0,3,6,1
+UDP flood attack,38000,7800000,420000000,3,0.08,2,0.05,1,0.02,0.01,0.01,0.99,0.99,0.1,38.0,2,5,1
+Large scale port scan,25000,50000,3000000,18000,0.7,15000,0.6,4200,0.17,0.97,0.96,0.95,0.94,0.15,44.0,4,6,1
+Botnet exfiltration,32000,6400000,890000000,6,0.0002,3,0.0001,2,6e-05,0.98,0.97,0.96,0.97,45.0,58.0,3,0,0
