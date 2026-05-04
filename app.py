@@ -119,6 +119,16 @@ PAGES = [
         ),
         "color": "#2196F3",
     },
+        {
+        "label": "Correlation & Dependency",
+        "file" : "pages/correlation_model",
+        "desc" : (
+            "Analyse inter-KPI dependencies and detect root causes "
+            "using correlation analysis, SHAP values, and anomaly scoring. "
+            "Supports manual input and CSV batch analysis."
+        ),
+        "color": "#7B68EE",
+    }
 ]
 
 

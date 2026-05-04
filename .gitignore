@@ -377,6 +377,8 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+*.ipynb_checkpoints
+*.ipynb
 # Correlation model artifacts
 dashboard/artifacts/*.pkl
 dashboard/ip_addresses_sample/
