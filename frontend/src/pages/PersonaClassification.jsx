@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader'
 import MetricCard from '../components/MetricCard'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Users, Gamepad2, Play, User } from 'lucide-react'
+import CsvInfo from '../components/CsvInfo'
 
 const ACCENT = '#E040FB'
 const PERSONA_ICON = { Gamer: Gamepad2, Streamer: Play, Normal: User }
@@ -61,6 +62,12 @@ export default function PersonaClassification() {
         title="User Persona Classification"
         subtitle="Classify network users into behavioral personas — Gamer, Streamer, or Normal — using a 7-feature XGBoost model."
         accent={ACCENT}
+      />
+
+      <CsvInfo
+        accent={ACCENT}
+        columns={['n_bytes','tcp_udp_ratio_packets','avg_duration','sum_n_dest_ip']}
+        notes="Upload traffic records for a single user (or subnet). The model aggregates all rows into one set of behavioral features, then classifies. More rows = more accurate burstiness and evening-intensity scores."
       />
 
       {/* Run */}

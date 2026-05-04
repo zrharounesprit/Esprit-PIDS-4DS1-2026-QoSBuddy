@@ -69,25 +69,54 @@ npm install
 npm run dev   # → http://localhost:3000
 ```
 
-### Running  
-Start each API in a separate terminal, then launch the dashboard:
+### Running
+
+Start each service in a **separate terminal** from the repo root, then open the React frontend:
 
 ```bash
-# Terminal 1 — Simulation + Persona Classification API (port 8000)
-uvicorn main:app --host 127.0.0.1 --port 8000
+# Terminal 1 — Persona Classification API (port 8000)
+uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 
 # Terminal 2 — Anomaly Detection API (port 8001)
-uvicorn utils.anomaly_api:app --host 127.0.0.1 --port 8001
+uvicorn utils.anomaly_api:app --host 127.0.0.1 --port 8001 --reload
 
 # Terminal 3 — Root Cause Analysis API (port 8002)
-uvicorn utils.main_RCA:app --host 127.0.0.1 --port 8002
+uvicorn utils.main_RCA:app --host 127.0.0.1 --port 8002 --reload
 
 # Terminal 4 — SLA Detection API (port 8003)
-uvicorn utils.sla_api:app --host 127.0.0.1 --port 8003
+uvicorn utils.sla_api:app --host 127.0.0.1 --port 8003 --reload
 
 # Terminal 5 — Traffic Forecasting API (port 8004)
-uvicorn utils.forecasting_api:app --host 127.0.0.1 --port 8004
+uvicorn utils.forecasting_api:app --host 127.0.0.1 --port 8004 --reload
 
-# Terminal 6 — Streamlit Dashboard
-streamlit run app.py
+# Terminal 6 — MCP / Simulation API (port 8005)
+uvicorn utils.mcp_api:app --host 127.0.0.1 --port 8005 --reload
+
+# Terminal 7 — React Frontend (port 3000)
+cd frontend && npm install && npm run dev
 ```
+
+Open **http://localhost:3000** in your browser.
+
+### Service port map
+
+| Service | Entrypoint | Port |
+|---|---|---|
+| Persona Classification | `main:app` | 8000 |
+| Anomaly Detection | `utils.anomaly_api:app` | 8001 |
+| Root Cause Analysis | `utils.main_RCA:app` | 8002 |
+| SLA Detection | `utils.sla_api:app` | 8003 |
+| Traffic Forecasting | `utils.forecasting_api:app` | 8004 |
+| MCP / Simulation | `utils.mcp_api:app` | 8005 |
+| React Frontend | `npm run dev` (in `frontend/`) | 3000 |
+
+### Testing each model
+
+| Page | Minimum CSV columns needed |
+|---|---|
+| Anomaly Detection | `n_bytes`, `n_packets`, `n_flows`, `tcp_udp_ratio_packets`, `dir_ratio_packets` |
+| Root Cause Analysis | `id_ip`, `n_flows`, `n_packets`, `n_bytes`, `sum_n_dest_ip`, `sum_n_dest_ports`, `avg_duration`, `avg_ttl`, ratio cols |
+| SLA Detection | All CESNET cols + `datetime`/`timestamp` (or `id_time` + upload `times_1_hour.csv`) |
+| Traffic Forecasting | All 15 CESNET feature cols — needs ≥ 24 consecutive hourly rows |
+| Persona Classification | `n_bytes`, `tcp_udp_ratio_packets`, `avg_duration`, `sum_n_dest_ip` |
+| Simulation | Per-user CSV with `n_bytes`, `n_packets`, `n_flows`, `avg_duration` |

@@ -8,6 +8,7 @@ import {
   ResponsiveContainer, Legend
 } from 'recharts'
 import { Network, Upload as UploadIcon, Plus, X, AlertTriangle, CheckCircle } from 'lucide-react'
+import CsvInfo from '../components/CsvInfo'
 
 const ACCENT = '#00FFD5'
 
@@ -40,17 +41,13 @@ export default function Simulation() {
     setRunningBase(true); setBaseResult(null); setWhatifResult(null)
 
     try {
-      const filesData = await Promise.all(
-        agentFiles.map(async f => {
-          const text = await f.text()
-          return { name: f.name, csv: text }
-        })
-      )
-      const res = await simulationApi.runAgents({
-        files: filesData,
-        capacity_gb: capacity,
-        n_simulations: simCount,
-      })
+      // API expects multipart/form-data with File uploads + form fields
+      const formData = new FormData()
+      agentFiles.forEach(f => formData.append('files', f))
+      formData.append('capacity',    capacity)    // matches Form field name in simulation_api.py
+      formData.append('simulations', simCount)
+
+      const res = await simulationApi.runAgents(formData)
       setBaseResult(res)
       toast('Simulation complete', 'success')
     } catch (e) {
@@ -64,11 +61,10 @@ export default function Simulation() {
     if (!personaInput.trim()) { toast('Describe a persona first', 'error'); return }
     setRunningWhatif(true); setWhatifResult(null)
     try {
-      const res = await simulationApi.agentRun({
-        prompt: personaInput,
-        capacity_gb: capacity,
-        n_simulations: simCount,
-      })
+      // /agent-run expects multipart/form-data with a `prompt` form field
+      const formData = new FormData()
+      formData.append('prompt', personaInput)
+      const res = await simulationApi.agentRun(formData)
       setWhatifResult(res)
       toast('What-If scenario complete', 'success')
     } catch (e) {
@@ -78,32 +74,35 @@ export default function Simulation() {
     }
   }
 
-  const trafficData = baseResult?.history
-    ? baseResult.history.map((row, i) => ({
-        t: row.time ?? i,
-        traffic: row.traffic,
-        load: row.load,
-        latency: row.latency,
+  // API returns { traffic: [...], logs, profiles, capacity }
+  const trafficRows = baseResult?.traffic ?? []
+
+  const trafficData = trafficRows.map((row, i) => ({
+    t:       row.time ?? i,
+    traffic: row.traffic ?? row.n_bytes ?? 0,
+    load:    row.load    ?? 0,
+    latency: row.latency ?? 0,
+  }))
+
+  // What-if comparison: base traffic vs after-injection traffic from agent result
+  const afterRows = whatifResult?.simulation_result?.network_after ?? []
+  const compareData = trafficRows.length
+    ? trafficRows.map((row, i) => ({
+        t:      row.time ?? i,
+        before: row.traffic ?? row.n_bytes ?? 0,
+        after:  afterRows[i]?.traffic ?? afterRows[i]?.n_bytes ?? null,
       }))
     : []
 
-  const compareData = (baseResult && whatifResult)
-    ? baseResult.history?.map((row, i) => ({
-        t: row.time ?? i,
-        before: row.traffic,
-        after: whatifResult.simulation_result?.history?.[i]?.traffic ?? null,
-      })) ?? []
-    : []
-
-  const baseStats = baseResult?.history
+  const baseStats = trafficRows.length
     ? {
-        avgLoad:    (baseResult.history.reduce((a,r) => a + (r.load||0), 0) / baseResult.history.length).toFixed(2),
-        avgLatency: (baseResult.history.reduce((a,r) => a + (r.latency||0), 0) / baseResult.history.length).toFixed(1),
-        avgLoss:    (baseResult.history.reduce((a,r) => a + (r.packet_loss||0), 0) / baseResult.history.length * 100).toFixed(2),
+        avgLoad:    (trafficRows.reduce((a,r) => a + (r.load||0), 0) / trafficRows.length).toFixed(2),
+        avgLatency: (trafficRows.reduce((a,r) => a + (r.latency||0), 0) / trafficRows.length).toFixed(1),
+        avgLoss:    (trafficRows.reduce((a,r) => a + (r.packet_loss||0), 0) / trafficRows.length * 100).toFixed(2),
       }
     : null
 
-  const maxLoad = baseResult?.history ? Math.max(...baseResult.history.map(r => r.load || 0)) : 0
+  const maxLoad = trafficRows.length ? Math.max(...trafficRows.map(r => r.load || 0)) : 0
 
   return (
     <div className="max-w-5xl animate-fade-in">
@@ -111,6 +110,12 @@ export default function Simulation() {
         title="Network Simulation"
         subtitle="Agent-based network simulation. Upload user traffic CSVs to create agents, configure network capacity, and run What-If scenarios with LLM-generated personas."
         accent={ACCENT}
+      />
+
+      <CsvInfo
+        accent={ACCENT}
+        columns={['n_bytes','n_packets','n_flows','avg_duration','tcp_udp_ratio_packets']}
+        notes="Upload one CSV file per simulated user/agent. Each file represents one user's historical traffic. The simulation aggregates across agents to model network load. What-If uses a text description (e.g. 'heavy gamer') — no CSV needed for that step."
       />
 
       <div className="grid grid-cols-2 gap-6 mb-6">
@@ -249,16 +254,23 @@ export default function Simulation() {
                 </>
               )}
 
-              {/* QoS verdict */}
+              {/* QoS verdict — use the decision field from simulate_persona if available,
+                  otherwise fall back to checking max load in the after rows */}
               <div className="mt-4">
-                {whatifResult.simulation_result?.max_load > 0.85
-                  ? <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-sm">
-                      <AlertTriangle size={14} /> Adding this user violates QoS thresholds (load &gt; 85%)
-                    </div>
-                  : <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 text-green-400 text-sm rounded-sm">
-                      <CheckCircle size={14} /> This user can be added without violating QoS thresholds
-                    </div>
-                }
+                {(() => {
+                  const decision = whatifResult.simulation_result?.decision
+                  const afterLoad = afterRows.length
+                    ? Math.max(...afterRows.map(r => r.load ?? 0))
+                    : null
+                  const violated = decision === 'REJECT' || (afterLoad != null && afterLoad > 0.85)
+                  return violated
+                    ? <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-sm">
+                        <AlertTriangle size={14} /> Adding this user violates QoS thresholds (load &gt; 85%)
+                      </div>
+                    : <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 text-green-400 text-sm rounded-sm">
+                        <CheckCircle size={14} /> This user can be added without violating QoS thresholds
+                      </div>
+                })()}
               </div>
             </div>
           )}

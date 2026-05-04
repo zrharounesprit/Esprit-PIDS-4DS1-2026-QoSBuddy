@@ -5,10 +5,10 @@ import io
 from pydantic import BaseModel
 from typing import List, Dict
 
-from agent import SmartAgent, extract_profile
-from network import Network
-from simulator import run_multiple_simulations
-from persona import build_prompt, query_llm, llm_to_profile
+from utils.agent import SmartAgent, extract_profile
+from utils.network import Network
+from utils.simulator import run_multiple_simulations
+from utils.persona import build_prompt, query_llm, llm_to_profile
 
 router = APIRouter()
 

@@ -17,19 +17,15 @@ from typing import Optional, List
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from dotenv import load_dotenv
 
-# Load .env from dashboard/ — one level up from utils/
+# Load .env from repository root — one level up from utils/
 load_dotenv(os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"
 ))
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise ValueError(
-        "GEMINI_API_KEY not found. "
-        "Add GEMINI_API_KEY=your-key to the .env file in dashboard/"
-    )
+# Support both GOOGLE_API_KEY (new .env standard) and GEMINI_API_KEY (legacy)
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 
-from agent_runner import run_agent
+from utils.agent_runner import run_agent
 
 router = APIRouter()
 
@@ -60,6 +56,11 @@ async def agent_run(
     Agent endpoint. Receives a prompt + optional CSV files.
     The agent decides whether to call the simulation tool.
     """
+    if not GEMINI_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="GOOGLE_API_KEY not found. Add GOOGLE_API_KEY=your-key to the .env file in the project root."
+        )
 
     # Read CSV file bytes if provided
     csv_bytes_list = []

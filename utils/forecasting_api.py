@@ -9,6 +9,7 @@ import os
 import pickle
 import numpy as np
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -45,6 +46,13 @@ LOG_INDICES = {0, 1, 2, 3, 4, 5, 6, 7, 8, 14}
 
 # ── FastAPI app ───────────────────────────────────────────────────────────────
 app = FastAPI(title="QoSBuddy Forecasting API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class ForecastRequest(BaseModel):

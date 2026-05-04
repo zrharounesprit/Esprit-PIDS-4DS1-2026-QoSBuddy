@@ -7,6 +7,7 @@ import MetricCard from '../components/MetricCard'
 import SeverityBadge from '../components/SeverityBadge'
 import ProgressBar from '../components/ProgressBar'
 import { AlertTriangle, Download, ChevronDown, ChevronUp } from 'lucide-react'
+import CsvInfo from '../components/CsvInfo'
 
 const ACCENT = '#F04444'
 const FEATURES = ['n_bytes','n_packets','n_flows','tcp_udp_ratio_packets','dir_ratio_packets']
@@ -98,6 +99,12 @@ export default function AnomalyDetection() {
           </button>
         )}
       </PageHeader>
+
+      <CsvInfo
+        accent={ACCENT}
+        columns={['n_bytes','n_packets','n_flows','tcp_udp_ratio_packets','dir_ratio_packets']}
+        notes="Any standard CESNET per-IP hourly export works. Only these 5 columns are required — extra columns are ignored. One row per prediction."
+      />
 
       {!dataset ? <NoDataset /> : (
         <>

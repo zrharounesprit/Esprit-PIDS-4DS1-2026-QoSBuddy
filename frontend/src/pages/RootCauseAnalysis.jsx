@@ -5,6 +5,7 @@ import { rcaApi } from '../api/client'
 import PageHeader from '../components/PageHeader'
 import SeverityBadge from '../components/SeverityBadge'
 import { GitBranch, ChevronDown, ChevronUp } from 'lucide-react'
+import CsvInfo from '../components/CsvInfo'
 
 const ACCENT = '#8B7CF8'
 
@@ -77,6 +78,14 @@ export default function RootCauseAnalysis() {
         title="Root Cause Analysis"
         subtitle="Select a row from your dataset to diagnose the root cause of its network behaviour using KMeans clustering."
         accent={ACCENT}
+      />
+
+      <CsvInfo
+        accent={ACCENT}
+        columns={['id_ip','n_flows','n_packets','n_bytes','sum_n_dest_ip','sum_n_dest_ports',
+                  'std_n_dest_ip','tcp_udp_ratio_packets','tcp_udp_ratio_bytes',
+                  'dir_ratio_packets','dir_ratio_bytes','avg_duration','avg_ttl']}
+        notes="One row = one IP record. Upload the CESNET per-IP hourly export. Use the Upload page to load the file, then select a row from the dropdown to analyse."
       />
 
       {/* Row selector */}

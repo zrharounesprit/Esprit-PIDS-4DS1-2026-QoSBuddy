@@ -15,9 +15,9 @@ pyarrow>=14.0
 
 # LLM / Agent dependencies
 langchain>=0.2
-langchain-google-genai>=1.0
+langchain-google-genai>=2.0
 langchain-core>=0.2
-google-generativeai>=0.5
+google-genai>=1.0
 
 # LSTM forecasting
 tensorflow>=2.15
@@ -25,3 +25,4 @@ keras>=2.15
 
 # MCP / simulation
 httpx>=0.27
+fastapi-mcp>=0.3

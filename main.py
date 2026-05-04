@@ -2,12 +2,20 @@ import joblib
 import pandas as pd
 import numpy as np
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Any
 import uvicorn
 import traceback
 # Traffic Classification Update
 app = FastAPI(title="QoSBuddy Engine")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- 1. ASSET LOADING ---
 try:

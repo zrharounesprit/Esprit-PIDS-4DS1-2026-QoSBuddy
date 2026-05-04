@@ -5,22 +5,39 @@ import { slaApi } from '../api/client'
 import PageHeader from '../components/PageHeader'
 import MetricCard from '../components/MetricCard'
 import SeverityBadge from '../components/SeverityBadge'
-import { ShieldAlert, Upload as UploadIcon, Download, ChevronDown, ChevronUp } from 'lucide-react'
+import CsvInfo from '../components/CsvInfo'
+import { ShieldAlert, Upload as UploadIcon, Download, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react'
 
 const ACCENT = '#22D3EE'
 const ROW_BG = { HIGH: 'bg-red-600/10', MEDIUM: 'bg-orange-500/8', LOW: 'bg-yellow-500/5' }
 
+/** Parse a CSV text string into an array of plain objects. */
+function parseCSVToRows(text) {
+  const lines = text.trim().split('\n').filter(Boolean)
+  if (lines.length < 2) return []
+  const headers = lines[0].split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+  return lines.slice(1).map(line => {
+    const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+    const row = {}
+    headers.forEach((h, i) => { row[h] = isNaN(vals[i]) || vals[i] === '' ? vals[i] : Number(vals[i]) })
+    return row
+  })
+}
+
 export default function SLADetection() {
   const { dataset } = useDataset()
   const toast = useToast()
-  const [timesFile, setTimesFile] = useState(null)
-  const [results, setResults] = useState([])
-  const [running, setRunning] = useState(false)
+
+  const [timesFile, setTimesFile]   = useState(null)
+  const [timesData, setTimesData]   = useState(null) // parsed times_1_hour rows
+
+  const [results, setResults]       = useState([])
+  const [running, setRunning]       = useState(false)
   const [onlyViolations, setOnlyViolations] = useState(false)
   const [severityFilter, setSeverityFilter] = useState(['LOW','MEDIUM','HIGH'])
-  const [expanded, setExpanded] = useState(null)
-  const [meta, setMeta] = useState(null)
-  const [metaError, setMetaError] = useState(null)
+  const [expanded, setExpanded]     = useState(null)
+  const [meta, setMeta]             = useState(null)
+  const [metaError, setMetaError]   = useState(null)
 
   async function fetchMeta() {
     try {
@@ -31,12 +48,30 @@ export default function SLADetection() {
     }
   }
 
+  async function handleTimesUpload(file) {
+    setTimesFile(file)
+    try {
+      const text = await file.text()
+      const rows = parseCSVToRows(text)
+      setTimesData(rows)
+      toast(`times file loaded — ${rows.length} rows`, 'success')
+    } catch (e) {
+      toast(`Failed to parse times file: ${e.message}`, 'error')
+      setTimesData(null)
+    }
+  }
+
   async function runAnalysis() {
     if (!dataset) { toast('No dataset loaded', 'error'); return }
     setRunning(true); setResults([])
     try {
       const rows = dataset.data.map((row, i) => ({ ...row, __row_id: i }))
-      const res = await slaApi.predict({ rows, input_row_count: rows.length })
+      const res = await slaApi.predict({
+        rows,
+        input_row_count: rows.length,
+        // Forward parsed times data only if it was uploaded
+        times_rows: timesData ?? undefined,
+      })
       const built = (res.results || []).map(item => {
         const src = dataset.data[item.row_id] ?? {}
         const ts = src.datetime ?? src.timestamp ?? src.time ?? src.id_time ?? item.row_id
@@ -68,7 +103,7 @@ export default function SLADetection() {
   }
 
   const violationCount = results.filter(r => r.anomaly === true).length
-  const violationRate = results.length ? ((violationCount / results.length) * 100).toFixed(2) : null
+  const violationRate  = results.length ? ((violationCount / results.length) * 100).toFixed(2) : null
   const filtered = results.filter(r => {
     if (onlyViolations && !r.anomaly) return false
     if (r.anomaly && !severityFilter.includes(r.severity)) return false
@@ -79,7 +114,7 @@ export default function SLADetection() {
     <div className="max-w-5xl animate-fade-in">
       <PageHeader
         title="SLA Detection"
-        subtitle="Detect SLA violations using an XGBoost model trained on 30+ engineered time-series features. Requires a dataset with timestamp information."
+        subtitle="Detect SLA violations using an XGBoost model. The API automatically engineers 37 time-series features from your raw CESNET data."
         accent={ACCENT}
       >
         {results.length > 0 && (
@@ -89,11 +124,20 @@ export default function SLADetection() {
         )}
       </PageHeader>
 
+      {/* CSV requirements */}
+      <CsvInfo
+        accent={ACCENT}
+        columns={['id_ip (or subnet_id)','n_flows','n_packets','n_bytes','tcp_udp_ratio_packets',
+                  'tcp_udp_ratio_bytes','dir_ratio_packets','dir_ratio_bytes','avg_duration',
+                  'datetime (or timestamp / time)']}
+        notes="If your CSV uses id_time (integer index) instead of real timestamps, also upload times_1_hour.csv below. The API handles all feature engineering internally — do not pre-process."
+      />
+
       {/* API Status */}
       <div className="card p-4 mb-5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <ShieldAlert size={14} style={{ color: ACCENT }} />
-          <span className="text-sm text-text-muted">SLA API (port 8003)</span>
+          <span className="text-sm text-text-muted">SLA API · port 8003</span>
           {meta && <span className="text-xs text-accent-green font-semibold">● Ready</span>}
           {metaError && <span className="text-xs text-red-400 font-semibold">● Unreachable</span>}
         </div>
@@ -102,24 +146,39 @@ export default function SLADetection() {
 
       {/* Times CSV uploader */}
       <div className="card p-5 mb-5">
-        <div className="label">Timestamps file (times_1_hour.csv) — optional</div>
+        <div className="label">
+          times_1_hour.csv
+          <span className="ml-2 text-text-faint normal-case font-normal">— required only when your dataset has id_time instead of real timestamps</span>
+        </div>
         <div className="flex items-center gap-3">
-          <div className="flex-1 input flex items-center gap-2 cursor-pointer"
-            onClick={() => document.getElementById('times-upload').click()}>
-            <UploadIcon size={13} className="text-text-faint shrink-0" />
-            <span className="text-text-faint text-sm">
-              {timesFile ? timesFile.name : 'Click to upload times_1_hour.csv'}
+          <div
+            className="flex-1 input flex items-center gap-2 cursor-pointer"
+            onClick={() => document.getElementById('times-upload').click()}
+          >
+            {timesData
+              ? <CheckCircle size={13} className="text-accent-green shrink-0" />
+              : <UploadIcon  size={13} className="text-text-faint shrink-0" />
+            }
+            <span className={`text-sm ${timesData ? 'text-accent-green' : 'text-text-faint'}`}>
+              {timesFile ? `${timesFile.name} — ${timesData?.length ?? 0} rows` : 'Click to upload times_1_hour.csv'}
             </span>
           </div>
           {timesFile && (
-            <button onClick={() => setTimesFile(null)} className="btn-ghost text-xs">Clear</button>
+            <button
+              onClick={() => { setTimesFile(null); setTimesData(null) }}
+              className="btn-ghost text-xs"
+            >
+              Clear
+            </button>
           )}
         </div>
-        <input id="times-upload" type="file" accept=".csv" className="hidden"
-          onChange={e => setTimesFile(e.target.files[0] || null)} />
-        <p className="text-xs text-text-faint mt-2">
-          Required only if your CSV uses id_time instead of real timestamps.
-        </p>
+        <input
+          id="times-upload"
+          type="file"
+          accept=".csv"
+          className="hidden"
+          onChange={e => { if (e.target.files[0]) handleTimesUpload(e.target.files[0]) }}
+        />
       </div>
 
       {/* Run */}
@@ -130,7 +189,7 @@ export default function SLADetection() {
               {dataset ? `Analyse ${dataset.rows.toLocaleString()} rows` : 'No dataset loaded'}
             </div>
             <div className="text-xs text-text-muted mt-0.5">
-              Uses dataset from Upload page or the file uploaded above
+              Feature engineering runs server-side · results may skip warmup rows
             </div>
           </div>
           <button
@@ -147,9 +206,9 @@ export default function SLADetection() {
       {/* Metrics */}
       {results.length > 0 && (
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <MetricCard label="Total Rows" value={results.length.toLocaleString()} accent="#7D8590" />
-          <MetricCard label="SLA Violations" value={violationCount.toLocaleString()} accent={ACCENT} />
-          <MetricCard label="Violation Rate" value={violationRate ? `${violationRate}%` : '—'} accent="#F97316" />
+          <MetricCard label="Total Rows"     value={results.length.toLocaleString()}                          accent="#7D8590" />
+          <MetricCard label="SLA Violations" value={violationCount.toLocaleString()}                          accent={ACCENT} />
+          <MetricCard label="Violation Rate" value={violationRate ? `${violationRate}%` : '—'}                accent="#F97316" />
         </div>
       )}
 
@@ -192,7 +251,8 @@ export default function SLADetection() {
             <tbody>
               {filtered.map((row, i) => (
                 <>
-                  <tr key={i}
+                  <tr
+                    key={i}
                     className={`table-row ${row.anomaly ? (ROW_BG[row.severity] || '') : ''} ${row.report ? 'cursor-pointer' : ''}`}
                     onClick={() => row.report && setExpanded(expanded === i ? null : i)}
                   >
@@ -205,10 +265,20 @@ export default function SLADetection() {
                         ? <span className="text-text-faint text-xs">NO</span>
                         : <span className="text-text-faint text-xs">SKIP</span>}
                     </td>
-                    <td className="table-cell">{row.severity ? <SeverityBadge label={row.severity} /> : <span className="text-text-faint">—</span>}</td>
-                    <td className="table-cell font-mono text-xs">{row.score != null ? (row.score * 100).toFixed(1) + '%' : '—'}</td>
-                    <td className="table-cell text-xs max-w-xs truncate">{row.recommendation ?? <span className="text-text-faint">—</span>}</td>
-                    <td className="table-cell">{row.report && (expanded === i ? <ChevronUp size={14} className="text-text-muted" /> : <ChevronDown size={14} className="text-text-muted" />)}</td>
+                    <td className="table-cell">
+                      {row.severity ? <SeverityBadge label={row.severity} /> : <span className="text-text-faint">—</span>}
+                    </td>
+                    <td className="table-cell font-mono text-xs">
+                      {row.score != null ? (row.score * 100).toFixed(1) + '%' : '—'}
+                    </td>
+                    <td className="table-cell text-xs max-w-xs truncate">
+                      {row.recommendation ?? <span className="text-text-faint">—</span>}
+                    </td>
+                    <td className="table-cell">
+                      {row.report && (expanded === i
+                        ? <ChevronUp size={14} className="text-text-muted" />
+                        : <ChevronDown size={14} className="text-text-muted" />)}
+                    </td>
                   </tr>
                   {expanded === i && row.report && (
                     <tr key={`${i}-exp`} className="bg-surface-2">

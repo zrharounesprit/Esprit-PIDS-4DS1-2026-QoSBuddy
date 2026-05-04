@@ -25,7 +25,9 @@ export default function MCPDemo() {
     setLog(prev => [...prev, { type: 'input', text: prompt, ts: new Date().toLocaleTimeString() }])
 
     try {
-      const res = await simulationApi.agentRun({ prompt, capacity_gb: 4 })
+      const fd = new FormData()
+      fd.append('prompt', prompt)
+      const res = await simulationApi.agentRun(fd)
       setResult(res)
       setLog(prev => [
         ...prev,

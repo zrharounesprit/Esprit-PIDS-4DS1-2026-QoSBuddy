@@ -1,12 +1,19 @@
 // Centralised API client for all QoSBuddy backend services
-// Ports: anomaly=8001, rca=8002, sla=8003, forecast=8004, simulation/persona=8000
+// Ports:
+//   8000 → Persona Classification (main.py)
+//   8001 → Anomaly Detection      (utils/anomaly_api.py)
+//   8002 → Root Cause Analysis    (utils/main_RCA.py)
+//   8003 → SLA Detection          (utils/sla_api.py)
+//   8004 → Traffic Forecasting    (utils/forecasting_api.py)
+//   8005 → MCP / Simulation       (utils/mcp_api.py)
 
 const BASE = {
-  simulation: 'http://127.0.0.1:8000',
+  persona:    'http://127.0.0.1:8000',
   anomaly:    'http://127.0.0.1:8001',
   rca:        'http://127.0.0.1:8002',
   sla:        'http://127.0.0.1:8003',
   forecast:   'http://127.0.0.1:8004',
+  simulation: 'http://127.0.0.1:8005',
 }
 
 async function post(url, body) {
@@ -24,6 +31,16 @@ async function post(url, body) {
 
 async function get(url) {
   const res = await fetch(url)
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`${res.status}: ${text}`)
+  }
+  return res.json()
+}
+
+// multipart/form-data — do NOT set Content-Type; browser adds the boundary automatically
+async function postForm(url, formData) {
+  const res = await fetch(url, { method: 'POST', body: formData })
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`${res.status}: ${text}`)
@@ -56,12 +73,14 @@ export const forecastApi = {
 
 // ── Persona Classification ────────────────────────────────────────────────────
 export const personaApi = {
-  classify: (payload) => post(`${BASE.simulation}/classify_content`, payload),
+  classify: (payload) => post(`${BASE.persona}/classify_content`, payload),
 }
 
-// ── Network Simulation ────────────────────────────────────────────────────────
+// ── Network Simulation / MCP ──────────────────────────────────────────────────
+// Both runAgents and agentRun use multipart/form-data (FastAPI Form/File fields)
+// runPersona uses JSON body (Pydantic BaseModel)
 export const simulationApi = {
-  runAgents:  (payload) => post(`${BASE.simulation}/simulate_agents`, payload),
-  runPersona: (payload) => post(`${BASE.simulation}/simulate_persona`, payload),
-  agentRun:   (payload) => post(`${BASE.simulation}/agent-run`, payload),
+  runAgents:  (formData) => postForm(`${BASE.simulation}/api/simulate_agents`, formData),
+  runPersona: (payload)  => post(`${BASE.simulation}/api/simulate_persona`, payload),
+  agentRun:   (formData) => postForm(`${BASE.simulation}/agent-run`, formData),
 }

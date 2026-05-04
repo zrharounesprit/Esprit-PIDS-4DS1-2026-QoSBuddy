@@ -2,11 +2,11 @@ import pandas as pd
 import json
 import os
 import re
-from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY")
+# Support both GOOGLE_API_KEY (new standard) and GEMINI_API_KEY (legacy)
+API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 
 def build_prompt(description):
     return f"""
@@ -27,12 +27,14 @@ def build_prompt(description):
     """
 
 def query_llm(prompt):
-    client = genai.Client(api_key=API_KEY)
+    from google import genai as google_genai
+
+    client = google_genai.Client(api_key=API_KEY)
 
     models = [
         "gemini-2.5-flash",
+        "gemini-2.0-flash",
         "gemini-1.5-flash",
-        "gemini-1.5-pro",
     ]
 
     errors = []
@@ -44,10 +46,10 @@ def query_llm(prompt):
                 model=model,
                 contents=prompt,
             )
-
-            if response and response.text:
+            text = response.text if hasattr(response, "text") else str(response)
+            if text and text.strip():
                 print(f"Success with {model}")
-                return response.text
+                return text
 
         except Exception as e:
             err_msg = f"{model} failed: {str(e)}"

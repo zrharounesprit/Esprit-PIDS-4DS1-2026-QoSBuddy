@@ -4,6 +4,7 @@ import { useToast } from '../hooks/useToast'
 import { forecastApi } from '../api/client'
 import PageHeader from '../components/PageHeader'
 import MetricCard from '../components/MetricCard'
+import CsvInfo from '../components/CsvInfo'
 import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine
@@ -102,6 +103,15 @@ export default function Forecasting() {
         title="Traffic Forecasting"
         subtitle="Predict future network traffic using an LSTM model with IP embedding. Uses a 24-hour lookback to forecast the next 6 hours."
         accent={ACCENT}
+      />
+
+      <CsvInfo
+        accent={ACCENT}
+        columns={['n_flows','n_packets','n_bytes','sum_n_dest_asn','average_n_dest_asn',
+                  'sum_n_dest_ports','average_n_dest_ports','sum_n_dest_ip','average_n_dest_ip',
+                  'tcp_udp_ratio_packets','tcp_udp_ratio_bytes','dir_ratio_packets',
+                  'dir_ratio_bytes','avg_duration','avg_ttl']}
+        notes="Needs at least 24 consecutive hourly rows for one IP/subnet. The model uses a sliding window of 24 hours to forecast the next 6. Optionally set an IP Embedding ID (0–999) matching your training data."
       />
 
       {!dataset ? (
