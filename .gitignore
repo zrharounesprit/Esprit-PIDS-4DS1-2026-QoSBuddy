@@ -379,3 +379,11 @@ FodyWeavers.xsd
 
 *.ipynb_checkpoints
 *.ipynb
+# Correlation model artifacts
+dashboard/artifacts/*.pkl
+dashboard/ip_addresses_sample/
+dashboard/times/
+**/__pycache__/
+**/.venv/
+**/venv/
+*.ipynb_checkpoints
