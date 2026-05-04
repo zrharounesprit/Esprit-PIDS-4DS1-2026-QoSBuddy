@@ -23,9 +23,9 @@ try:
     model = joblib.load('artifacts/persona_model.pkl')
     scaler = joblib.load('artifacts/scaler.joblib')
     le = joblib.load('artifacts/label_encoder.joblib')
-    print("✅ Assets Loaded.")
+    print("Assets Loaded.")
 except Exception as e:
-    print(f"❌ Load Error: {e}")
+    print(f"Load Error: {e}")
 class TrafficPoint(BaseModel):
     n_bytes: Any = 0
     tcp_udp_ratio_packets: Any = 0
