@@ -61,6 +61,13 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env and add your GOOGLE_API_KEY
 ```
+### Start frontend   
+
+```bash
+cd frontend
+npm install
+npm run dev   # → http://localhost:3000
+```
 
 ### Running  
 Start each API in a separate terminal, then launch the dashboard:
