@@ -155,7 +155,7 @@ def _step_persona(df: pd.DataFrame) -> dict:
         step["summary"] = "No valid rows for persona classification."
         return step
 
-    payload = row.to_dict(orient="records")[0]
+    payload = row.to_dict(orient="records")
     resp = _post(f"{PERSONA_API}/classify_content", payload, TIMEOUT_SHORT)
     if "error" in resp:
         step["status"] = "warn"

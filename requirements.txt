@@ -12,3 +12,16 @@ shap>=0.43
 openai>=1.0
 httpx>=0.24
 python-dotenv>=1.0
+plotly>=5.0
+
+# LLM / Agent dependencies
+langchain>=0.2
+langchain-google-genai>=2.0
+langchain-core>=0.2
+google-genai>=1.0
+
+# LSTM forecasting
+tensorflow>=2.15
+
+# MCP
+fastapi-mcp>=0.3

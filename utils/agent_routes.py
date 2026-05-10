@@ -24,6 +24,8 @@ load_dotenv(os.path.join(
 
 # Support both GOOGLE_API_KEY (new .env standard) and GEMINI_API_KEY (legacy)
 GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    print("WARNING: GOOGLE_API_KEY / GEMINI_API_KEY not set — agent-run endpoint will be unavailable")
 
 from utils.agent_runner import run_agent
 

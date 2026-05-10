@@ -152,7 +152,7 @@ export default function Autopilot() {
 
   function handleFile(f) {
     if (!f || !f.name.endsWith('.csv')) {
-      toast.error('CSV only', 'Please upload a .csv file.')
+      toast('Please upload a .csv file.', 'error')
       return
     }
     setFile(f)
@@ -178,12 +178,12 @@ export default function Autopilot() {
       setResult(res)
       setTimeout(() => setStepsVisible(true), 100)
       if (res.severity === 'CRITICAL' || res.severity === 'HIGH') {
-        toast.error(`${res.severity} severity detected`, res.synthesis?.executive_summary?.slice(0, 80) || '')
+        toast(`${res.severity} severity detected`, 'error')
       } else {
-        toast.success('Analysis complete', `Severity: ${res.severity}`)
+        toast(`Analysis complete — Severity: ${res.severity}`, 'success')
       }
     } catch (e) {
-      toast.error('Analysis failed', e.message)
+      toast(`Analysis failed: ${e.message}`, 'error')
     } finally {
       setLoading(false)
     }
