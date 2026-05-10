@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useToast } from '../hooks/useToast'
 import { simulationApi } from '../api/client'
 import PageHeader from '../components/PageHeader'
-import { Radio, Send, Terminal, CheckCircle, XCircle } from 'lucide-react'
+import { Radio, Send, Terminal, CheckCircle, XCircle, Upload, X, FileText } from 'lucide-react'
 
 const ACCENT = '#0097a7'
 
@@ -18,15 +18,41 @@ export default function MCPDemo() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [log, setLog] = useState([])
+  const [csvFiles, setCsvFiles] = useState([])
+  const fileInputRef = useRef(null)
+
+  function handleFileChange(e) {
+    const incoming = Array.from(e.target.files || []).filter(f => f.name.endsWith('.csv'))
+    if (incoming.length === 0) return
+    setCsvFiles(prev => {
+      const existing = new Set(prev.map(f => f.name))
+      const fresh = incoming.filter(f => !existing.has(f.name))
+      return [...prev, ...fresh]
+    })
+    // reset input so same file can be re-selected after removal
+    e.target.value = ''
+  }
+
+  function removeFile(name) {
+    setCsvFiles(prev => prev.filter(f => f.name !== name))
+  }
 
   async function runAgent() {
     if (!prompt.trim()) return
     setLoading(true)
     setLog(prev => [...prev, { type: 'input', text: prompt, ts: new Date().toLocaleTimeString() }])
+    if (csvFiles.length > 0) {
+      setLog(prev => [...prev, {
+        type: 'system',
+        text: `Attaching ${csvFiles.length} CSV file(s): ${csvFiles.map(f => f.name).join(', ')}`,
+        ts: new Date().toLocaleTimeString(),
+      }])
+    }
 
     try {
       const fd = new FormData()
       fd.append('prompt', prompt)
+      csvFiles.forEach(f => fd.append('files', f))
       const res = await simulationApi.agentRun(fd)
       setResult(res)
       setLog(prev => [
@@ -74,6 +100,64 @@ export default function MCPDemo() {
           {' '}React → FastAPI /agent-run → LangChain Agent → Gemini 2.5 Flash → MCP Tools
           (simulate_agents, check_network_health, classify_ip_root_cause)
         </div>
+      </div>
+
+      {/* CSV Upload */}
+      <div className="card p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Upload size={13} style={{ color: ACCENT }} />
+            <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+              Upload CSV Files
+            </span>
+          </div>
+          <span className="text-xs text-text-faint">
+            Each file represents one network user (columns: hour, n_bytes, n_packets, n_flows)
+          </span>
+        </div>
+
+        {/* Drop zone */}
+        <label
+          className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-sm p-5 cursor-pointer hover:border-accent-teal-border transition-colors mb-3"
+          style={{ minHeight: 80 }}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            multiple
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <Upload size={18} className="text-text-faint" />
+          <span className="text-xs text-text-faint text-center">
+            Click or drag &amp; drop CSV files here<br />
+            <span className="text-text-faint opacity-60">(multiple files accepted)</span>
+          </span>
+        </label>
+
+        {/* File chips */}
+        {csvFiles.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {csvFiles.map(f => (
+              <div
+                key={f.name}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-2 border border-border rounded-sm text-xs text-text-muted"
+              >
+                <FileText size={11} style={{ color: ACCENT }} />
+                <span className="font-mono">{f.name}</span>
+                <span className="text-text-faint ml-1">({(f.size / 1024).toFixed(1)} KB)</span>
+                <button
+                  onClick={() => removeFile(f.name)}
+                  className="ml-1 text-text-faint hover:text-red-400 transition-colors"
+                  title="Remove"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Terminal / log */}

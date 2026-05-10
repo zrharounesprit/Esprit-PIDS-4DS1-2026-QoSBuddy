@@ -4,7 +4,7 @@ import json
 import pandas as pd
 import plotly.express as px
 
-API_BASE = "http://127.0.0.1:8000"
+API_BASE = "http://127.0.0.1:8005"
 
 if "baseline_json" not in st.session_state:
     st.session_state.baseline_json = None

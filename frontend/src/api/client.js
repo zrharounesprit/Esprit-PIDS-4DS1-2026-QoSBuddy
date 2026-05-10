@@ -84,3 +84,17 @@ export const simulationApi = {
   runPersona: (payload)  => post(`${BASE.simulation}/api/simulate_persona`, payload),
   agentRun:   (formData) => postForm(`${BASE.simulation}/agent-run`, formData),
 }
+
+// ── Autopilot — multi-model incident investigation ────────────────────────────
+export const autopilotApi = {
+  analyze: (formData) => postForm(`${BASE.simulation}/incident-analyze`, formData),
+}
+
+// ── NOC Autopilot — SLA Guardian agentic loop ─────────────────────────────────
+export const nocApi = {
+  status:  ()                    => get(`${BASE.simulation}/noc/status`),
+  history: (limit = 10)          => get(`${BASE.simulation}/noc/history?limit=${limit}`),
+  trigger: (inject_breach = false) =>
+    post(`${BASE.simulation}/noc/trigger?inject_breach=${inject_breach}`, {}),
+}
+
