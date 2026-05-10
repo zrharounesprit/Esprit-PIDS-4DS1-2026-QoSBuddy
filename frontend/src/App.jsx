@@ -10,8 +10,10 @@ import RootCauseAnalysis    from './pages/RootCauseAnalysis'
 import SLADetection         from './pages/SLADetection'
 import PersonaClassification from './pages/PersonaClassification'
 import Forecasting          from './pages/Forecasting'
-import Simulation           from './pages/Simulation'
-import MCPDemo              from './pages/MCPDemo'
+import Simulation                from './pages/Simulation'
+import MCPDemo                  from './pages/MCPDemo'
+import NetworkCoverageSimulator  from './pages/NetworkCoverageSimulator'
+import AutoPilot                from './pages/AutoPilot'
 
 export default function App() {
   return (
@@ -28,6 +30,8 @@ export default function App() {
             <Route path="/forecast"   element={<Forecasting />} />
             <Route path="/simulation" element={<Simulation />} />
             <Route path="/mcp"        element={<MCPDemo />} />
+            <Route path="/coverage"   element={<NetworkCoverageSimulator />} />
+            <Route path="/auto-pilot" element={<AutoPilot />} />
             <Route path="*"           element={<div className="text-text-muted p-8">404 — Page not found</div>} />
           </Routes>
         </Layout>
