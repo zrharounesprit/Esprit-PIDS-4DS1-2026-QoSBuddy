@@ -68,7 +68,9 @@ export const slaApi = {
 
 // ── Traffic Forecasting ───────────────────────────────────────────────────────
 export const forecastApi = {
-  run: (rows, ip_id = 0) => post(`${BASE.forecast}/forecast`, { rows, ip_id }),
+  run:     (rows, ip_id = 0)                           => post(`${BASE.forecast}/forecast`, { rows, ip_id }),
+  explain: (historical_bytes, forecast_bytes, filename) => post(`${BASE.forecast}/explain`, { historical_bytes, forecast_bytes, filename }),
+  ipId:    (filename)                                  => get(`${BASE.forecast}/ip-id?filename=${encodeURIComponent(filename)}`),
 }
 
 // ── Persona Classification ────────────────────────────────────────────────────
