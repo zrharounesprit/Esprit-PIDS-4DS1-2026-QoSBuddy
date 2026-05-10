@@ -88,7 +88,7 @@ export default function MCPDemo() {
     <div className="max-w-3xl animate-fade-in">
       <PageHeader
         title="MCP Demo"
-        subtitle="Live demonstration of the MCP bridge and LangChain + Gemini agent orchestration layer. Type a natural language command and watch the agent decide which tools to invoke."
+        subtitle="Live demonstration of the MCP bridge and LangChain + Kimi K2.6 agent orchestration layer. Type a natural language command and watch the agent decide which tools to invoke."
         accent={ACCENT}
       />
 
@@ -97,7 +97,7 @@ export default function MCPDemo() {
         <Radio size={14} style={{ color: ACCENT }} className="shrink-0" />
         <div className="text-xs text-text-muted">
           <span className="font-semibold text-text-primary">Architecture:</span>
-          {' '}React → FastAPI /agent-run → LangChain Agent → Gemini 2.5 Flash → MCP Tools
+          {' '}React → FastAPI /agent-run → LangChain Agent → Kimi K2.6 (Moonshot) → MCP Tools
           (simulate_agents, check_network_health, classify_ip_root_cause)
         </div>
       </div>

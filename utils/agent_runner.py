@@ -1,14 +1,18 @@
 """
-agent_runner.py — LangChain + Gemini agent for QoSBuddy simulation.
+agent_runner.py — LangChain + Kimi K2.6 agent for QoSBuddy simulation.
 
 Uses a manual tool-calling loop (langchain_core only) so it works with
 any langchain version that has bind_tools / ToolMessage support.
 No dependency on AgentExecutor or create_tool_calling_agent.
+
+The LLM is Moonshot's Kimi K2.6 (kimi-k2-0711), accessed via the
+OpenAI-compatible API at https://api.moonshot.ai/v1.
 """
 
+import os
 from typing import Optional
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage, AIMessage
 from langchain_core.tools import tool
 
@@ -216,10 +220,10 @@ def run_agent(
     user_prompt: str,
     csv_bytes_list: list,
     agent_names: list,
-    gemini_api_key: str,
+    gemini_api_key: str = "",
 ) -> dict:
     """
-    Run the Gemini tool-calling agent.
+    Run the Kimi K2.6 tool-calling agent.
 
     Uses a manual tool-calling loop (bind_tools + ToolMessage) so it works
     with any langchain version — no AgentExecutor required.
@@ -243,10 +247,14 @@ def run_agent(
         else "No CSV files have been uploaded yet."
     )
 
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
-        google_api_key=gemini_api_key,
-        temperature=0.3,
+    moonshot_key = os.getenv("MOONSHOT_API_KEY", "")
+    llm = ChatOpenAI(
+        model="kimi-k2-0711",
+        api_key=moonshot_key,
+        base_url="https://api.moonshot.ai/v1",
+        temperature=0.6,
+        max_tokens=1024,
+        model_kwargs={"thinking": {"type": "disabled"}},
     )
 
     all_tools   = [run_network_simulation] + get_mcp_tools()

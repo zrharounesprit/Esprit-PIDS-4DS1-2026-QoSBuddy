@@ -22,10 +22,10 @@ load_dotenv(os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"
 ))
 
-# Support both GOOGLE_API_KEY (new .env standard) and GEMINI_API_KEY (legacy)
-GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    print("WARNING: GOOGLE_API_KEY / GEMINI_API_KEY not set — agent-run endpoint will be unavailable")
+# Kimi K2.6 (Moonshot API) is used for the agent — check for key
+MOONSHOT_API_KEY = os.getenv("MOONSHOT_API_KEY", "")
+if not MOONSHOT_API_KEY:
+    print("WARNING: MOONSHOT_API_KEY not set — agent-run endpoint will be unavailable")
 
 from utils.agent_runner import run_agent
 
@@ -37,7 +37,7 @@ router = APIRouter()
     summary="Run the QoSBuddy agent with a natural language prompt",
     description="""
     The user provides a natural language prompt and optionally uploads CSV files.
-    The Gemini agent decides whether to run a simulation based on the prompt,
+    The Kimi K2.6 agent decides whether to run a simulation based on the prompt,
     executes the simulation tool if appropriate, and returns a plain English summary.
 
     This is the agentic endpoint — the agent decides what to do,
@@ -58,10 +58,10 @@ async def agent_run(
     Agent endpoint. Receives a prompt + optional CSV files.
     The agent decides whether to call the simulation tool.
     """
-    if not GEMINI_API_KEY:
+    if not MOONSHOT_API_KEY:
         raise HTTPException(
             status_code=503,
-            detail="GOOGLE_API_KEY not found. Add GOOGLE_API_KEY=your-key to the .env file in the project root."
+            detail="MOONSHOT_API_KEY not found. Add MOONSHOT_API_KEY=your-key to the .env file in the project root."
         )
 
     # Read CSV file bytes if provided
@@ -85,7 +85,6 @@ async def agent_run(
             user_prompt    = prompt,
             csv_bytes_list = csv_bytes_list,
             agent_names    = agent_names,
-            gemini_api_key = GEMINI_API_KEY,
         )
         return result
 
