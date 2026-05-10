@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Upload, AlertTriangle, GitBranch,
   ShieldAlert, Users, TrendingUp, Network, Radio,
-  Bot, Shield, ChevronRight
+  Bot, Shield, Map, Leaf, ChevronRight
 } from 'lucide-react'
 
 const NAV = [
@@ -16,6 +16,8 @@ const NAV = [
   { to: '/forecast',   label: 'Traffic Forecasting',  icon: TrendingUp,      accent: '#3B82F6' },
   { divider: true, label: 'Simulation' },
   { to: '/simulation', label: 'Network Simulation',   icon: Network,         accent: '#00FFD5' },
+  { to: '/coverage',   label: 'Coverage Simulator',   icon: Map,             accent: '#22C55E' },
+  { to: '/auto-pilot', label: 'Green Auto-Pilot',     icon: Leaf,            accent: '#22C55E' },
   { to: '/mcp',        label: 'MCP Demo',             icon: Radio,           accent: '#0097a7' },
   { divider: true, label: 'AI Intelligence' },
   { to: '/autopilot',  label: 'Autopilot',            icon: Bot,             accent: '#F59E0B' },
