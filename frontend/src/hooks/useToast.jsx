@@ -32,10 +32,10 @@ export function useToast() {
 }
 
 const TYPE_STYLES = {
-  success: 'border-l-4 border-accent-green bg-accent-green-dim text-accent-green',
-  error:   'border-l-4 border-accent-red bg-accent-red-dim text-accent-red',
-  info:    'border-l-4 border-accent-teal bg-accent-teal-dim text-accent-teal',
-  warning: 'border-l-4 border-accent-orange bg-accent-orange-dim text-accent-orange',
+  success: 'border-l-[3px] border-accent-green bg-accent-green-dim text-accent-green',
+  error:   'border-l-[3px] border-accent-red bg-accent-red-dim text-accent-red',
+  info:    'border-l-[3px] border-accent-teal bg-accent-teal-dim text-accent-teal',
+  warning: 'border-l-[3px] border-accent-orange bg-accent-orange-dim text-accent-orange',
 }
 
 function ToastContainer({ toasts, onRemove }) {
@@ -45,10 +45,10 @@ function ToastContainer({ toasts, onRemove }) {
       {toasts.map(t => (
         <div
           key={t.id}
-          className={`flex items-start justify-between gap-3 px-4 py-3 rounded-sm shadow-lg text-sm font-medium animate-slide-in ${TYPE_STYLES[t.type] || TYPE_STYLES.info}`}
+          className={`flex items-start justify-between gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium animate-slide-in backdrop-blur-xl ${TYPE_STYLES[t.type] || TYPE_STYLES.info}`}
         >
           <span>{t.message}</span>
-          <button onClick={() => onRemove(t.id)} className="opacity-60 hover:opacity-100 shrink-0 mt-0.5">✕</button>
+          <button onClick={() => onRemove(t.id)} className="opacity-60 hover:opacity-100 shrink-0 mt-0.5 text-xs">✕</button>
         </div>
       ))}
     </div>

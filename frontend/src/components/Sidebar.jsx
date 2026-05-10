@@ -2,50 +2,54 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Upload, AlertTriangle, GitBranch,
   ShieldAlert, Users, TrendingUp, Network, Radio,
-  Bot, Shield, Map, Leaf, ChevronRight
+  Shield, Leaf, ChevronRight, Zap,
+  ChevronsLeft, ChevronsRight
 } from 'lucide-react'
 
 const NAV = [
-  { to: '/',           label: 'Dashboard',           icon: LayoutDashboard, accent: '#00FFD5' },
-  { to: '/upload',     label: 'Upload Dataset',       icon: Upload,          accent: '#22C55E' },
+  { to: '/',           label: 'Dashboard',            icon: LayoutDashboard, accent: '#00E8C6' },
+  { to: '/upload',     label: 'Upload Dataset',       icon: Upload,          accent: '#34D399' },
   { divider: true, label: 'Analysis' },
-  { to: '/anomaly',    label: 'Anomaly Detection',    icon: AlertTriangle,   accent: '#F04444' },
-  { to: '/rca',        label: 'Root Cause Analysis',  icon: GitBranch,       accent: '#8B7CF8' },
-  { to: '/sla',        label: 'SLA Detection',        icon: ShieldAlert,     accent: '#22D3EE' },
-  { to: '/persona',    label: 'User Persona',         icon: Users,           accent: '#E040FB' },
-  { to: '/forecast',   label: 'Traffic Forecasting',  icon: TrendingUp,      accent: '#3B82F6' },
+  { to: '/anomaly',    label: 'Anomaly Detection',    icon: AlertTriangle,   accent: '#FF5A5A' },
+  { to: '/rca',        label: 'Root Cause Analysis',  icon: GitBranch,       accent: '#A78BFA' },
+  { to: '/sla',        label: 'SLA Detection',        icon: ShieldAlert,     accent: '#38BDF8' },
+  { to: '/persona',    label: 'User Persona',         icon: Users,           accent: '#E879F9' },
+  { to: '/forecast',   label: 'Traffic Forecasting',  icon: TrendingUp,      accent: '#60A5FA' },
   { divider: true, label: 'Simulation' },
-  { to: '/simulation', label: 'Network Simulation',   icon: Network,         accent: '#00FFD5' },
-  { to: '/coverage',   label: 'Coverage Simulator',   icon: Map,             accent: '#22C55E' },
-  { to: '/auto-pilot', label: 'Green Auto-Pilot',     icon: Leaf,            accent: '#22C55E' },
-  { to: '/mcp',        label: 'MCP Demo',             icon: Radio,           accent: '#0097a7' },
-  { divider: true, label: 'AI Intelligence' },
-  { to: '/autopilot',  label: 'Autopilot',            icon: Bot,             accent: '#F59E0B' },
-  { to: '/noc',        label: 'NOC Autopilot',        icon: Shield,          accent: '#00FFD5' },
+  { to: '/simulation', label: 'Network Simulation',   icon: Network,         accent: '#00E8C6' },
+  { to: '/auto-pilot', label: 'Green Auto-Pilot',     icon: Leaf,            accent: '#34D399' },
+  { to: '/mcp',        label: 'MCP Demo',             icon: Radio,           accent: '#38BDF8' },
+  { divider: true, label: 'AI Ops' },
+  { to: '/noc',        label: 'NOC Autopilot',        icon: Shield,          accent: '#00E8C6' },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed, onToggle }) {
   return (
-    <aside className="w-60 shrink-0 h-screen sticky top-0 flex flex-col bg-surface border-r border-border overflow-y-auto">
+    <aside
+      className={`${collapsed ? 'w-[68px]' : 'w-[240px]'} shrink-0 h-screen sticky top-0 flex flex-col bg-surface/80 backdrop-blur-xl border-r border-border overflow-hidden transition-all duration-300 ease-in-out z-30`}
+    >
       {/* Brand */}
-      <div className="px-5 pt-6 pb-5 border-b border-border">
+      <div className={`px-4 pt-5 pb-4 border-b border-border ${collapsed ? 'flex justify-center' : ''}`}>
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-sm flex items-center justify-center bg-accent-teal-dim border border-accent-teal-border">
-            <span className="text-accent-teal text-xs font-bold font-mono">QB</span>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-accent-teal/20 to-accent-teal/5 border border-accent-teal/30 shrink-0">
+            <Zap size={15} className="text-accent-teal" />
           </div>
-          <div>
-            <div className="text-sm font-bold text-text-primary tracking-tight">QoSBuddy</div>
-            <div className="text-[10px] text-text-faint uppercase tracking-widest">Network Assurance</div>
-          </div>
+          {!collapsed && (
+            <div className="animate-fade-in">
+              <div className="text-sm font-bold text-text-primary tracking-tight leading-none">QoSBuddy</div>
+              <div className="text-[10px] text-text-muted mt-0.5">Network Assurance</div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-3">
+      <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden">
         {NAV.map((item, idx) => {
           if (item.divider) {
+            if (collapsed) return <div key={idx} className="my-2 mx-3 border-t border-border-subtle" />
             return (
-              <div key={idx} className="px-3 pt-4 pb-1">
+              <div key={idx} className="px-3 pt-5 pb-1.5">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-text-faint">
                   {item.label}
                 </span>
@@ -58,29 +62,37 @@ export default function Sidebar() {
               key={item.to}
               to={item.to}
               end={item.to === '/'}
+              title={collapsed ? item.label : undefined}
               className={({ isActive }) =>
-                `group flex items-center gap-2.5 px-3 py-2 text-sm rounded-sm transition-all duration-150 mb-0.5 ${
-                  isActive
-                    ? 'bg-surface-2 text-text-primary font-medium'
+                `group relative flex items-center gap-2.5 rounded-md transition-all duration-200 mb-0.5
+                 ${collapsed ? 'justify-center px-0 py-2.5 mx-1' : 'px-3 py-2'}
+                 ${isActive
+                    ? 'bg-surface-3 text-text-primary font-medium'
                     : 'text-text-muted hover:text-text-primary hover:bg-surface-2'
-                }`
+                 }`
               }
             >
               {({ isActive }) => (
                 <>
                   {/* Active accent bar */}
-                  <span
-                    className="absolute left-0 w-0.5 h-5 rounded-r transition-all"
-                    style={{ background: isActive ? item.accent : 'transparent' }}
-                  />
-                  <Icon
-                    size={15}
-                    style={{ color: isActive ? item.accent : undefined }}
-                    className={isActive ? '' : 'group-hover:text-text-primary'}
-                  />
-                  <span className="flex-1">{item.label}</span>
                   {isActive && (
-                    <ChevronRight size={12} style={{ color: item.accent }} className="opacity-60" />
+                    <span
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full transition-all"
+                      style={{ background: item.accent }}
+                    />
+                  )}
+                  <Icon
+                    size={collapsed ? 18 : 16}
+                    style={{ color: isActive ? item.accent : undefined }}
+                    className={`shrink-0 transition-colors ${isActive ? '' : 'group-hover:text-text-secondary'}`}
+                  />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 text-[13px] truncate">{item.label}</span>
+                      {isActive && (
+                        <ChevronRight size={12} style={{ color: item.accent }} className="opacity-50" />
+                      )}
+                    </>
                   )}
                 </>
               )}
@@ -90,12 +102,14 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-5 py-4 border-t border-border">
-        <div className="text-[10px] text-text-faint leading-relaxed">
-          <div className="font-semibold text-text-muted mb-0.5">Team VizBiz</div>
-          Esprit · 4DS1 · 2026
+      {!collapsed && (
+        <div className="px-4 py-3 border-t border-border animate-fade-in">
+          <div className="text-[10px] text-text-faint leading-relaxed">
+            <div className="font-semibold text-text-muted mb-0.5">Team VizBiz</div>
+            Esprit · 4DS1 · 2026
+          </div>
         </div>
-      </div>
+      )}
     </aside>
   )
 }

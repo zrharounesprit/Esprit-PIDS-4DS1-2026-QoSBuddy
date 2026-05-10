@@ -1,4 +1,4 @@
-export default function ProgressBar({ value, max, label, accent = '#00FFD5' }) {
+export default function ProgressBar({ value, max, label, accent = '#00E8C6' }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0
   return (
     <div>
@@ -10,8 +10,8 @@ export default function ProgressBar({ value, max, label, accent = '#00FFD5' }) {
       )}
       <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
         <div
-          className="h-full transition-all duration-300 rounded-full"
-          style={{ width: `${pct}%`, background: accent }}
+          className="h-full transition-all duration-500 ease-out rounded-full"
+          style={{ width: `${pct}%`, background: `linear-gradient(to right, ${accent}, ${accent}90)` }}
         />
       </div>
     </div>

@@ -8,7 +8,7 @@ import {
   ClipboardList, Cpu, GitBranch, Brain, SkipForward
 } from 'lucide-react'
 
-const ACCENT = '#00FFD5'
+const ACCENT = '#00E8C6'
 const POLL_MS = 3000
 
 // ── Severity config ──────────────────────────────────────────────────────────
@@ -17,12 +17,12 @@ const SEV_CONFIG = {
   HIGH:     { color: '#F97316', bg: '#7c2d1233', label: 'HIGH',     icon: AlertTriangle },
   MEDIUM:   { color: '#EAB308', bg: '#71350033', label: 'MEDIUM',   icon: AlertTriangle },
   LOW:      { color: '#22C55E', bg: '#14532d33', label: 'LOW',      icon: CheckCircle },
-  OK:       { color: '#00FFD5', bg: '#00FFD511', label: 'NOMINAL',  icon: CheckCircle },
+  OK:       { color: '#00E8C6', bg: '#00E8C611', label: 'NOMINAL',  icon: CheckCircle },
 }
 
 // ── Phase config ─────────────────────────────────────────────────────────────
 const PHASE_META = {
-  OBSERVE:    { icon: Eye,          color: '#00FFD5', label: 'Observe' },
+  OBSERVE:    { icon: Eye,          color: '#00E8C6', label: 'Observe' },
   ATTRIBUTE:  { icon: Search,       color: '#8B7CF8', label: 'Attribute' },
   PLAN:       { icon: ClipboardList,color: '#3B82F6', label: 'Plan' },
   SIMULATE:   { icon: Cpu,          color: '#F59E0B', label: 'Simulate' },
@@ -286,9 +286,9 @@ export default function SLAGuardian() {
     setTriggering(true)
     try {
       await nocApi.trigger(injectBreach)
-      toast.success('NOC cycle started', 'Polling for results…')
+      toast('NOC cycle started — polling for results…', 'success')
     } catch (e) {
-      toast.error('Trigger failed', e.message)
+      toast(`Trigger failed: ${e.message}`, 'error')
     } finally {
       setTimeout(() => setTriggering(false), 1500)
     }
@@ -303,9 +303,9 @@ export default function SLAGuardian() {
   const sev = SEV_CONFIG[sevKey] || SEV_CONFIG.OK
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageHeader
-        icon={<Shield size={20} style={{ color: ACCENT }} />}
+        icon={Shield}
         title="NOC Autopilot"
         subtitle="Autonomous SLA Guardian — observe, attribute, plan, simulate, verify, iterate, synthesize"
         accent={ACCENT}
